@@ -8,6 +8,8 @@ import { TambahBerkas } from "../pages/TambahBerkas";
 import { TrackingDetail } from "../pages/TrackingDetail";
 import { DashboardCamat } from "../pages/DashboardCamat";
 import { DashboardDinas } from "../pages/DashboardDinas";
+import { DashboardKepalaDinas } from "../pages/DashboardKepalaDinas";
+import { DashboardBiroOrganisasi } from "../pages/DashboardBiroOrganisasi";
 
 export function AppRouter() {
   return (
@@ -21,6 +23,8 @@ export function AppRouter() {
         <Route path="/tracking/:id" element={<TrackingDetail />} />
         <Route path="/camat" element={<DashboardCamat />} />
         <Route path="/dinas" element={<DashboardDinas />} />
+        <Route path="/kepala-dinas" element={<DashboardKepalaDinas />} />
+        <Route path="/biro-organisasi" element={<DashboardBiroOrganisasi />} />
       </Route>
       
       <Route path="/contact" element={<Contact />} />

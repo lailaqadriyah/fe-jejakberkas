@@ -25,10 +25,37 @@ export function MainLayout() {
 
   const isCamat = location.pathname.startsWith('/camat');
   const isDinas = location.pathname.startsWith('/dinas');
+  const isKepalaDinas = location.pathname.startsWith('/kepala-dinas');
+  const isBiroOrganisasi = location.pathname.startsWith('/biro-organisasi');
+  const displayProfile = {
+    name: isCamat
+      ? 'Drs. Ahmad Fauzi'
+      : isDinas
+        ? 'Rina Pramesti'
+        : isKepalaDinas
+          ? 'Dr. Hendra Wijaya'
+          : isBiroOrganisasi
+            ? 'Maya Anggraini'
+            : 'Siti Nurhaliza',
+    role: isCamat
+      ? 'Camat Kuranji'
+      : isDinas
+        ? 'Staff Dinas Dukcapil'
+        : isKepalaDinas
+          ? 'Kepala Dinas Dukcapil'
+          : isBiroOrganisasi
+            ? 'Bidang Organisasi'
+            : 'Staff Kecamatan',
+  };
 
-  const userName = user?.nama_lengkap || (isCamat ? 'Drs. Ahmad Fauzi' : isDinas ? 'Rina Pramesti' : 'Siti Nurhaliza');
-  const userRole = user?.role || (isCamat ? 'Camat Kuranji' : isDinas ? 'Staff Dinas Dukcapil' : 'Staff Kecamatan');
-  const initials = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const userName = user?.nama_lengkap || displayProfile.name;
+  const userRole = user?.role || displayProfile.role;
+  const initials = userName
+    .split(' ')
+    .map(word => word[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
   
   return (
     <div className="flex h-screen bg-[#f4f7fb] font-sans text-gray-800">
@@ -54,10 +81,6 @@ export function MainLayout() {
                 <LayoutDashboard className="w-4 h-4 mr-3" />
                 Dashboard
               </Link>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <FilePlus className="w-4 h-4 mr-3" />
-                Menunggu TTD
-              </a>
               <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
                 <FileText className="w-4 h-4 mr-3" />
                 Monitoring Staff
@@ -90,12 +113,50 @@ export function MainLayout() {
                 Tracking
               </a>
               <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
-                <History className="w-4 h-4 mr-3" />
-                Riwayat
+                <AlertCircle className="w-4 h-4 mr-3" />
+                ! Penalti Saya
+              </a>
+            </>
+          ) : isKepalaDinas ? (
+            <>
+              <Link to="/kepala-dinas" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/kepala-dinas' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                <LayoutDashboard className="w-4 h-4 mr-3" />
+                Dashboard
+              </Link>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
+                <FileText className="w-4 h-4 mr-3" />
+                Monitoring Staff Dinas
               </a>
               <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
                 <AlertCircle className="w-4 h-4 mr-3" />
-                ! Penalti Saya
+                ! Penalti Staff
+              </a>
+            </>
+          ) : isBiroOrganisasi ? (
+            <>
+              <Link to="/biro-organisasi" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/biro-organisasi' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                <LayoutDashboard className="w-4 h-4 mr-3" />
+                Dashboard Utama
+              </Link>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
+                <FileText className="w-4 h-4 mr-3" />
+                Performa Kecamatan
+              </a>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
+                <FileText className="w-4 h-4 mr-3" />
+                Performa Dinas
+              </a>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
+                <AlertCircle className="w-4 h-4 mr-3" />
+                Grafik Penalti
+              </a>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
+                <LayoutDashboard className="w-4 h-4 mr-3" />
+                Ranking Unit Kerja
+              </a>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
+                <FileText className="w-4 h-4 mr-3" />
+                Export Laporan
               </a>
             </>
           ) : (
@@ -108,22 +169,15 @@ export function MainLayout() {
                 <FilePlus className="w-4 h-4 mr-3" />
                 Tambah Berkas
               </Link>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <FileText className="w-4 h-4 mr-3" />
-                Daftar Berkas
-              </a>
               <Link to="/tracking/JB-2025-00128" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname.startsWith('/tracking') ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
                 <MapPin className="w-4 h-4 mr-3" />
                 Tracking Berkas
               </Link>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <History className="w-4 h-4 mr-3" />
-                Riwayat
-              </a>
               <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
                 <AlertCircle className="w-4 h-4 mr-3" />
                 Penalti Saya
               </a>
+
             </>
           )}
         </nav>
@@ -199,6 +253,26 @@ export function MainLayout() {
                     <span>Dashboard</span>
                     <ChevronRight className="w-3 h-3 mx-1" />
                     <span>Staff Dinas</span>
+                  </div>
+                </div>
+              )}
+              {location.pathname === '/kepala-dinas' && (
+                <div>
+                  <h2 className="text-2xl font-bold text-[#112340]">Dashboard Kepala Dinas</h2>
+                  <div className="flex items-center text-xs text-gray-500 mt-1 font-medium">
+                    <span>Dashboard</span>
+                    <ChevronRight className="w-3 h-3 mx-1" />
+                    <span>Kepala Dinas</span>
+                  </div>
+                </div>
+              )}
+              {location.pathname === '/biro-organisasi' && (
+                <div>
+                  <h2 className="text-2xl font-bold text-[#112340]">Dashboard Bidang Organisasi</h2>
+                  <div className="flex items-center text-xs text-gray-500 mt-1 font-medium">
+                    <span>Dashboard</span>
+                    <ChevronRight className="w-3 h-3 mx-1" />
+                    <span>Evaluasi Kinerja Pelayanan</span>
                   </div>
                 </div>
               )}
