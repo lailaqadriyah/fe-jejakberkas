@@ -166,6 +166,9 @@ export function DashboardDinas() {
     return 'not_started';
   };
 
+  // Feature flag: show the Alur Proses Dinas panel on dashboard
+  const SHOW_ALUR_DINAS = false;
+
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, fontFamily: 'sans-serif', fontSize: 13, color: '#6b7280' }}>
@@ -297,60 +300,62 @@ export function DashboardDinas() {
           {/* LEFT: Alur Proses + SLA */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
-            {/* Alur Proses Dinas */}
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid #f3f4f6' }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#0f1f3d' }}>Alur Proses Dinas</div>
-                <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>Tahapan standar berkas di Dinas yang harus dilalui di Dinas.</div>
-              </div>
-              <div style={{ padding: '10px 20px 16px' }}>
-                {(() => {
-                  const order = getDashboardOrder();
-                  const first = berkasDinas && berkasDinas.length > 0 ? berkasDinas[0] : null;
-                  return order.map((stepKey, i) => {
-                    const state = getDashboardStepState(stepKey, i, order, first);
-                    const isCompleted = state === 'completed';
-                    const isActive = state === 'active';
-                    const isLast = i === order.length - 1;
-                    const st = getStatusStyle(stepKey);
-                    const label = stepKey === 'BERKAS_DITERIMA' ? 'Berkas Diterima' : st.label;
-                    const desc = stepKey === 'BERKAS_DITERIMA' ? 'Berkas sudah ada di Dinas dan siap diproses.' : '';
-                    return (
-                      <div key={stepKey} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', position: 'relative', paddingBottom: isLast ? 0 : 4 }}>
-                        {!isLast && (
-                          <div style={{ position: 'absolute', left: 15, top: 32, width: 2, height: 'calc(100% - 8px)', background: isCompleted ? '#22c55e' : '#e5e7eb', zIndex: 0 }} />
-                        )}
-                        <div style={{ width: 30, height: 30, borderRadius: '50%', background: isCompleted ? '#22c55e' : isActive ? '#2563eb' : '#f3f4f6', border: `2px solid ${isCompleted ? '#16a34a' : isActive ? '#1d4ed8' : '#d1d5db'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, zIndex: 1, position: 'relative' }}>
-                          {isCompleted ? (
-                            <span style={{ color: '#fff', fontSize: 13, fontWeight: 900 }}>✓</span>
-                          ) : (
-                            <span style={{ fontSize: 10, fontWeight: 800, color: isActive ? '#fff' : '#9ca3af' }}>{i + 1}</span>
+            {/* Alur Proses Dinas (hidden by feature flag) */}
+            {SHOW_ALUR_DINAS && (
+              <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
+                <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid #f3f4f6' }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#0f1f3d' }}>Alur Proses Dinas</div>
+                  <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>Tahapan standar berkas di Dinas yang harus dilalui di Dinas.</div>
+                </div>
+                <div style={{ padding: '10px 20px 16px' }}>
+                  {(() => {
+                    const order = getDashboardOrder();
+                    const first = berkasDinas && berkasDinas.length > 0 ? berkasDinas[0] : null;
+                    return order.map((stepKey, i) => {
+                      const state = getDashboardStepState(stepKey, i, order, first);
+                      const isCompleted = state === 'completed';
+                      const isActive = state === 'active';
+                      const isLast = i === order.length - 1;
+                      const st = getStatusStyle(stepKey);
+                      const label = stepKey === 'BERKAS_DITERIMA' ? 'Berkas Diterima' : st.label;
+                      const desc = stepKey === 'BERKAS_DITERIMA' ? 'Berkas sudah ada di Dinas dan siap diproses.' : '';
+                      return (
+                        <div key={stepKey} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', position: 'relative', paddingBottom: isLast ? 0 : 4 }}>
+                          {!isLast && (
+                            <div style={{ position: 'absolute', left: 15, top: 32, width: 2, height: 'calc(100% - 8px)', background: isCompleted ? '#22c55e' : '#e5e7eb', zIndex: 0 }} />
                           )}
-                        </div>
-                        <div style={{ flex: 1, padding: '4px 0 20px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: isCompleted ? '#16a34a' : isActive ? '#1d4ed8' : '#374151' }}>{label}</div>
-                            {isCompleted && (
-                              <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 5, padding: '2px 8px' }}>Completed</span>
-                            )}
-                            {isActive && (
-                              <span style={{ fontSize: 10, fontWeight: 700, color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 5, padding: '2px 8px' }}>Active</span>
-                            )}
-                            {!isCompleted && !isActive && i === 1 && (
-                              <span style={{ fontSize: 10, fontWeight: 700, color: '#d97706', background: '#fefce8', border: '1px solid #fde047', borderRadius: 5, padding: '2px 8px' }}>Waiting</span>
-                            )}
-                            {!isCompleted && !isActive && i > 1 && (
-                              <span style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: 5, padding: '2px 8px' }}>Not Started</span>
+                          <div style={{ width: 30, height: 30, borderRadius: '50%', background: isCompleted ? '#22c55e' : isActive ? '#2563eb' : '#f3f4f6', border: `2px solid ${isCompleted ? '#16a34a' : isActive ? '#1d4ed8' : '#d1d5db'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, zIndex: 1, position: 'relative' }}>
+                            {isCompleted ? (
+                              <span style={{ color: '#fff', fontSize: 13, fontWeight: 900 }}>✓</span>
+                            ) : (
+                              <span style={{ fontSize: 10, fontWeight: 800, color: isActive ? '#fff' : '#9ca3af' }}>{i + 1}</span>
                             )}
                           </div>
-                          <div style={{ fontSize: 11, color: '#6b7280', marginTop: 3 }}>{desc}</div>
+                          <div style={{ flex: 1, padding: '4px 0 20px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: isCompleted ? '#16a34a' : isActive ? '#1d4ed8' : '#374151' }}>{label}</div>
+                              {isCompleted && (
+                                <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 5, padding: '2px 8px' }}>Completed</span>
+                              )}
+                              {isActive && (
+                                <span style={{ fontSize: 10, fontWeight: 700, color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 5, padding: '2px 8px' }}>Active</span>
+                              )}
+                              {!isCompleted && !isActive && i === 1 && (
+                                <span style={{ fontSize: 10, fontWeight: 700, color: '#d97706', background: '#fefce8', border: '1px solid #fde047', borderRadius: 5, padding: '2px 8px' }}>Waiting</span>
+                              )}
+                              {!isCompleted && !isActive && i > 1 && (
+                                <span style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: 5, padding: '2px 8px' }}>Not Started</span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#6b7280', marginTop: 3 }}>{desc}</div>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  });
-                })()}
+                      );
+                    });
+                  })()}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Catatan SLA */}
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>

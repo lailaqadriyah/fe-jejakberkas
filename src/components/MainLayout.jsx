@@ -31,7 +31,9 @@ export function MainLayout() {
     if (!user) return;
     const role = (user.role || '').toString().toLowerCase();
     if (location.pathname === '/home') {
-      if (role.includes('camat')) navigate('/camat');
+      // Check 'kecamatan' first to avoid matching 'camat' inside 'kecamatan'
+      if (role.includes('kecamatan')) navigate('/home');
+      else if (role.includes('camat')) navigate('/camat');
       else if (role.includes('dinas')) navigate('/dinas');
       else if (role.includes('kepala')) navigate('/kepala-dinas');
       else if (role.includes('biro') || role.includes('organisasi')) navigate('/biro-organisasi');

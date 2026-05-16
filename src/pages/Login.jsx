@@ -50,8 +50,10 @@ const Login = () => {
         localStorage.setItem('user', JSON.stringify(data.user));
         
         const role = (data.user.role || '').toString().toLowerCase();
-        // Normalize role strings from Firestore (allow values like 'Staff Dinas Dukcapil')
-        if (role.includes('camat')) navigate('/camat');
+        // Normalize role strings from Firestore.
+        // Important: check 'kecamatan' before 'camat' because 'kecamatan' contains 'camat' as substring.
+        if (role.includes('kecamatan')) navigate('/home');
+        else if (role.includes('camat')) navigate('/camat');
         else if (role.includes('dinas')) navigate('/dinas');
         else if (role.includes('kepala')) navigate('/kepala-dinas');
         else if (role.includes('biro') || role.includes('organisasi')) navigate('/biro-organisasi');
