@@ -47,11 +47,14 @@ const Login = () => {
       const data = await response.json();
 
       if (data.success) {
-        // Simpan sesi staf ke Local Storage
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        // Arahkan ke halaman tambah berkas (pastikan rute ini ada di AppRouter Anda)
-        navigate('/tambah-berkas'); 
+        const role = data.user.role;
+        if (role === 'camat') navigate('/camat');
+        else if (role === 'staff_dinas') navigate('/dinas');
+        else if (role === 'kepala_dinas') navigate('/kepala-dinas');
+        else if (role === 'bidang_organisasi') navigate('/biro-organisasi');
+        else navigate('/home');
       } else {
         // Tampilkan pesan error jika salah ID atau Nama
         setErrorMsg(data.message);
