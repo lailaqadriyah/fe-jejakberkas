@@ -7,9 +7,13 @@ import { MainLayout } from "../components/MainLayout";
 import { TambahBerkas } from "../pages/TambahBerkas";
 import { TrackingDetail } from "../pages/TrackingDetail";
 import { DashboardCamat } from "../pages/DashboardCamat";
-import { DashboardDinas } from "../pages/DashboardDinas";
 import { DashboardKepalaDinas } from "../pages/DashboardKepalaDinas";
+import { DashboardDinas } from "../pages/DashboardDinas";
 import { DashboardBiroOrganisasi } from "../pages/DashboardBiroOrganisasi";
+import { PenaltiSaya } from "../pages/PenaltiSaya";
+import { Notifikasi } from "../pages/Notifikasi";
+import { Profil } from "../pages/Profil";
+import { AturanSLA } from "../pages/AturanSLA";
 
 export function AppRouter() {
   return (
@@ -26,6 +30,10 @@ export function AppRouter() {
         <Route path="/dinas" element={<DashboardDinas />} />
         <Route path="/kepala-dinas" element={<DashboardKepalaDinas />} />
         <Route path="/biro-organisasi" element={<DashboardBiroOrganisasi />} />
+        <Route path="/penalti" element={<PenaltiSaya />} />
+        <Route path="/notifikasi" element={<Notifikasi />} />
+        <Route path="/profil" element={<Profil />} />
+        <Route path="/aturan-sla" element={<AturanSLA />} />
       </Route>
       
       <Route path="/contact" element={<Contact />} />
