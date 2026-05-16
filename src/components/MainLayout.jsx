@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, FilePlus, FileText, MapPin, History, AlertCircle, 
   Search, Bell, Menu, ChevronRight, ChevronDown, LogOut
@@ -22,6 +22,21 @@ export function MainLayout() {
     const saved = localStorage.getItem('user');
     if (saved) setUser(JSON.parse(saved));
   }, []);
+
+  const navigate = useNavigate();
+
+  // If a user is already stored in localStorage but currently on /home (default),
+  // try to redirect them to their appropriate dashboard based on role.
+  useEffect(() => {
+    if (!user) return;
+    const role = (user.role || '').toString().toLowerCase();
+    if (location.pathname === '/home') {
+      if (role.includes('camat')) navigate('/camat');
+      else if (role.includes('dinas')) navigate('/dinas');
+      else if (role.includes('kepala')) navigate('/kepala-dinas');
+      else if (role.includes('biro') || role.includes('organisasi')) navigate('/biro-organisasi');
+    }
+  }, [user, location.pathname, navigate]);
 
   const isCamat = location.pathname.startsWith('/camat');
   const isDinas = location.pathname.startsWith('/dinas');

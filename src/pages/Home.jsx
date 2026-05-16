@@ -80,7 +80,7 @@ export function Home() {
       'PEMBUATAN_SURAT_PENGANTAR': { label: 'Buat Surat Pengantar', cls: 'bg-blue-50 text-blue-600 border-blue-200' },
       'MENUNGGU_TTD_CAMAT': { label: 'Menunggu TTD Camat', cls: 'bg-orange-50 text-orange-600 border-orange-200' },
       'SELESAI_KECAMATAN': { label: 'Selesai Kecamatan', cls: 'bg-green-50 text-green-600 border-green-200' },
-      'ANTREAN_LOKET_DINAS': { label: 'Antrean Loket Dinas', cls: 'bg-blue-50 text-blue-600 border-blue-200' },
+      'KONFIRMASI_WARGA_KE_DINAS': { label: 'Menuju Dinas', cls: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
       'VERIFIKASI_BERKAS_DINAS': { label: 'Verifikasi Berkas Dinas', cls: 'bg-blue-50 text-blue-600 border-blue-200' },
       'VERIFIKASI_SIAK': { label: 'Verifikasi Database', cls: 'bg-blue-50 text-blue-600 border-blue-200' },
       'PROSES_CETAK': { label: 'Proses Cetak', cls: 'bg-blue-50 text-blue-600 border-blue-200' },

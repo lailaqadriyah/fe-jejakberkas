@@ -85,13 +85,12 @@ export function DashboardCamat() {
       });
       const json = await res.json();
       if (json.success) {
-        alert(`Berkas ${noReg} berhasil dikonfirmasi!`);
-        fetchData();
+        Swal.fire({ icon: 'success', title: 'Berhasil!', text: `Berkas ${noReg} berhasil dikonfirmasi TTD.`, confirmButtonColor: '#112340' }).then(() => fetchData());
       } else {
-        alert('Gagal: ' + json.message);
+        Swal.fire({ icon: 'error', title: 'Gagal', text: json.message, confirmButtonColor: '#112340' });
       }
     } catch (err) {
-      alert('Gagal terhubung ke server.');
+      Swal.fire({ icon: 'error', title: 'Koneksi Gagal', text: 'Tidak dapat terhubung ke server.', confirmButtonColor: '#112340' });
     }
   };
 

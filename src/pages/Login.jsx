@@ -49,11 +49,12 @@ const Login = () => {
       if (data.success) {
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        const role = data.user.role;
-        if (role === 'camat') navigate('/camat');
-        else if (role === 'staff_dinas') navigate('/dinas');
-        else if (role === 'kepala_dinas') navigate('/kepala-dinas');
-        else if (role === 'bidang_organisasi') navigate('/biro-organisasi');
+        const role = (data.user.role || '').toString().toLowerCase();
+        // Normalize role strings from Firestore (allow values like 'Staff Dinas Dukcapil')
+        if (role.includes('camat')) navigate('/camat');
+        else if (role.includes('dinas')) navigate('/dinas');
+        else if (role.includes('kepala')) navigate('/kepala-dinas');
+        else if (role.includes('biro') || role.includes('organisasi')) navigate('/biro-organisasi');
         else navigate('/home');
       } else {
         // Tampilkan pesan error jika salah ID atau Nama
