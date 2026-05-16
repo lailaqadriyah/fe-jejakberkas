@@ -5,7 +5,6 @@ import {
   Clock, CheckCircle, Clock3, AlertTriangle, Info, LogOut, TrendingUp,
   FileBadge2
 } from 'lucide-react';
-import logoImage from '../assets/logo.png';
 
 export function Home() {
   return (
