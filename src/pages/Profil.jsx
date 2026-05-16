@@ -11,9 +11,18 @@ export function Profil() {
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     } else {
-      // Dummy data fallback based on router state
-      const mockName = location.state?.mockName || "Siti Nurhaliza";
-      const mockRoleRaw = location.state?.mockRole || "Staff Kecamatan";
+      // Dummy data fallback based on router state or sessionStorage
+      const sessionRole = sessionStorage.getItem('mockRole') || "kecamatan";
+      const mockRoleRaw = location.state?.mockRole || sessionRole;
+      let mockName = location.state?.mockName;
+
+      if (!mockName) {
+        if (sessionRole.includes('camat')) mockName = 'Drs. Ahmad Fauzi';
+        else if (sessionRole.includes('kepala-dinas')) mockName = 'Dr. Hendra Wijaya';
+        else if (sessionRole.includes('dinas')) mockName = 'Rina Pramesti';
+        else if (sessionRole.includes('biro')) mockName = 'Maya Anggraini';
+        else mockName = 'Siti Nurhaliza';
+      }
       
       let mappedRole = "staff_kecamatan";
       let unitKerja = "kuranji";

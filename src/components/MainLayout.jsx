@@ -25,7 +25,6 @@ export function MainLayout() {
     if (saved) setUser(JSON.parse(saved));
   }, []);
 
-  const navigate = useNavigate();
 
   // If a user is already stored in localStorage but currently on /home (default),
   // try to redirect them to their appropriate dashboard based on role.
@@ -42,10 +41,33 @@ export function MainLayout() {
     }
   }, [user, location.pathname, navigate]);
 
-  const isCamat = location.pathname.startsWith('/camat');
-  const isDinas = location.pathname.startsWith('/dinas') || location.pathname.startsWith('/tracking-dinas');
-  const isKepalaDinas = location.pathname.startsWith('/kepala-dinas');
-  const isBiroOrganisasi = location.pathname.startsWith('/biro-organisasi');
+  const getMockRoleFromPath = (path) => {
+    if (path.startsWith('/camat')) return 'camat';
+    if (path.startsWith('/dinas') || path.startsWith('/tracking-dinas')) return 'dinas';
+    if (path.startsWith('/kepala-dinas')) return 'kepala-dinas';
+    if (path.startsWith('/biro-organisasi')) return 'biro-organisasi';
+    if (path === '/home' || path === '/tambah-berkas') return 'kecamatan';
+    return null;
+  };
+
+  const pathRole = getMockRoleFromPath(location.pathname);
+
+  // Maintain active role even when on /profil or /notifikasi
+  useEffect(() => {
+    if (pathRole) {
+      sessionStorage.setItem('mockRole', pathRole);
+    }
+  }, [pathRole]);
+
+  const activeRole = user 
+    ? (user.role || '').toLowerCase() 
+    : (pathRole || sessionStorage.getItem('mockRole') || 'kecamatan');
+
+  const isCamat = activeRole === 'camat';
+  const isDinas = activeRole === 'staff_dinas' || activeRole === 'dinas';
+  const isKepalaDinas = activeRole === 'kepala_dinas' || activeRole === 'kepala-dinas';
+  const isBiroOrganisasi = activeRole === 'bidang_organisasi' || activeRole === 'biro-organisasi';
+
   const displayProfile = {
     name: isCamat
       ? 'Drs. Ahmad Fauzi'
@@ -100,18 +122,6 @@ export function MainLayout() {
                 <LayoutDashboard className="w-4 h-4 mr-3" />
                 Dashboard
               </Link>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <FileText className="w-4 h-4 mr-3" />
-                Monitoring Staff
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <AlertCircle className="w-4 h-4 mr-3" />
-                Penalti Staff
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
-                <History className="w-4 h-4 mr-3" />
-                Statistik Kecamatan
-              </a>
             </>
           ) : isDinas ? (
             <>
@@ -119,22 +129,6 @@ export function MainLayout() {
                 <LayoutDashboard className="w-4 h-4 mr-3" />
                 Dashboard
               </Link>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <FilePlus className="w-4 h-4 mr-3" />
-                Berkas Masuk
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <FileText className="w-4 h-4 mr-3" />
-                Proses Berkas
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <MapPin className="w-4 h-4 mr-3" />
-                Tracking
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
-                <AlertCircle className="w-4 h-4 mr-3" />
-                ! Penalti Saya
-              </a>
             </>
           ) : isKepalaDinas ? (
             <>
@@ -142,14 +136,6 @@ export function MainLayout() {
                 <LayoutDashboard className="w-4 h-4 mr-3" />
                 Dashboard
               </Link>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <FileText className="w-4 h-4 mr-3" />
-                Monitoring Staff Dinas
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
-                <AlertCircle className="w-4 h-4 mr-3" />
-                ! Penalti Staff
-              </a>
             </>
           ) : isBiroOrganisasi ? (
             <>
@@ -157,26 +143,6 @@ export function MainLayout() {
                 <LayoutDashboard className="w-4 h-4 mr-3" />
                 Dashboard Utama
               </Link>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <FileText className="w-4 h-4 mr-3" />
-                Performa Kecamatan
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <FileText className="w-4 h-4 mr-3" />
-                Performa Dinas
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
-                <AlertCircle className="w-4 h-4 mr-3" />
-                Grafik Penalti
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
-                <LayoutDashboard className="w-4 h-4 mr-3" />
-                Ranking Unit Kerja
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
-                <FileText className="w-4 h-4 mr-3" />
-                Export Laporan
-              </a>
             </>
           ) : (
             <>

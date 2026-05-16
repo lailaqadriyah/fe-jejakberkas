@@ -11,7 +11,8 @@ export function Notifikasi() {
     if (savedUser) {
       setRole(JSON.parse(savedUser).role);
     } else {
-      const mockRoleRaw = location.state?.mockRole || "Staff Kecamatan";
+      const sessionRole = sessionStorage.getItem('mockRole') || "kecamatan";
+      const mockRoleRaw = location.state?.mockRole || sessionRole;
       const lowerRole = mockRoleRaw.toLowerCase();
       if (lowerRole.includes('camat')) setRole('camat');
       else if (lowerRole.includes('kepala dinas')) setRole('kepala_dinas');
