@@ -20,7 +20,12 @@ export function MainLayout() {
   const isCamat = location.pathname.startsWith('/camat');
   const isDinas = location.pathname.startsWith('/dinas');
   const isKepalaDinas = location.pathname.startsWith('/kepala-dinas');
-  const isBiroOrganisasi = location
+  const isBiroOrganisasi = location.pathname.startsWith('/biro-organisasi');
+  
+  return (
+    <div className="flex h-screen bg-[#f4f7fb] font-sans text-gray-800">
+      
+      {/* Sidebar */}
       <aside className="w-[260px] bg-[#112340] text-white flex flex-col shrink-0 relative overflow-hidden">
         {/* Subtle Background Pattern */}
         <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>

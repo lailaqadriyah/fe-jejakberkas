@@ -83,8 +83,12 @@ export function TambahBerkas() {
   const [noRegResult, setNoRegResult] = useState("JB-2025-XXXXX");
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) setUserLogin(JSON.parse(savedUser));
+    try {
+      const savedUser = localStorage.getItem("user");
+      if (savedUser) setUserLogin(JSON.parse(savedUser));
+    } catch (e) {
+      localStorage.removeItem("user");
+    }
   }, []);
 
   const handleInputChange = (e) => {
