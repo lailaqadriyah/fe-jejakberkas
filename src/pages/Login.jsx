@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   User, 
   Lock, 
@@ -16,7 +17,51 @@ import {
 import logoImage from '../assets/logo2.png';
 
 const Login = () => {
+  // --- STATE UNTUK INTEGRASI BACKEND ---
   const [showPassword, setShowPassword] = useState(false);
+  const [idStaf, setIdStaf] = useState('');
+  const [namaLengkap, setNamaLengkap] = useState(''); // Berfungsi sebagai 'password' sementara
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const navigate = useNavigate();
+
+  // --- FUNGSI LOGIN KE EXPRESS.JS ---
+  const handleLogin = async (e) => {
+    e.preventDefault(); 
+    setErrorMsg('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:3000/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id_staf: idStaf,
+          nama_lengkap: namaLengkap
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Simpan sesi staf ke Local Storage
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Arahkan ke halaman tambah berkas (pastikan rute ini ada di AppRouter Anda)
+        navigate('/tambah-berkas'); 
+      } else {
+        // Tampilkan pesan error jika salah ID atau Nama
+        setErrorMsg(data.message);
+      }
+    } catch (error) {
+      setErrorMsg("Gagal terhubung ke server. Pastikan backend Express Anda menyala.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-[#f8f9fb] relative overflow-hidden">
@@ -101,22 +146,32 @@ const Login = () => {
         <div className="w-full max-w-md">
           <div className="bg-white p-10 rounded-[2rem] shadow-xl border border-gray-100">
             
-            <div className="text-center mb-10">
+            <div className="text-center mb-8">
               <h2 className="text-[26px] font-bold text-[#1e3a5f] mb-2 tracking-tight">Selamat Datang Kembali!</h2>
               <p className="text-sm text-gray-500">Silakan masuk untuk melanjutkan<br/>ke JejakBerkas</p>
             </div>
 
-            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+            {/* AREA PESAN ERROR */}
+            {errorMsg && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm mb-6 text-center font-medium">
+                {errorMsg}
+              </div>
+            )}
+
+            <form className="space-y-6" onSubmit={handleLogin}>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Username atau Email</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">ID Staf / Username</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <User className="w-5 h-5 text-gray-400" />
                   </div>
                   <input 
                     type="text" 
-                    placeholder="Masukkan username atau email" 
+                    placeholder="Contoh: STAFF_KEC_02" 
+                    value={idStaf}
+                    onChange={(e) => setIdStaf(e.target.value)}
+                    required
                     className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
@@ -124,7 +179,7 @@ const Login = () => {
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold text-gray-700">Password</label>
+                  <label className="block text-sm font-semibold text-gray-700">Nama Lengkap (Password)</label>
                   <a href="#" className="text-sm font-semibold text-[#0056b3] hover:text-[#004494] transition-colors">
                     Lupa Password?
                   </a>
@@ -135,7 +190,10 @@ const Login = () => {
                   </div>
                   <input 
                     type={showPassword ? "text" : "password"} 
-                    placeholder="Masukkan password" 
+                    placeholder="Masukkan nama lengkap Anda" 
+                    value={namaLengkap}
+                    onChange={(e) => setNamaLengkap(e.target.value)}
+                    required
                     className="w-full pl-12 pr-12 py-3.5 bg-white border border-gray-200 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                   <button 
@@ -161,10 +219,11 @@ const Login = () => {
 
               <button 
                 type="submit" 
-                className="w-full bg-[#182945] hover:bg-[#111e35] text-white text-base font-bold py-3.5 px-4 rounded-xl flex items-center justify-center transition-all shadow-lg shadow-[#182945]/20 mt-6"
+                disabled={isLoading}
+                className="w-full bg-[#182945] hover:bg-[#111e35] disabled:bg-gray-400 text-white text-base font-bold py-3.5 px-4 rounded-xl flex items-center justify-center transition-all shadow-lg shadow-[#182945]/20 mt-6"
               >
-                Masuk ke Portal
-                <ArrowRight className="w-5 h-5 ml-2" />
+                {isLoading ? "Memproses..." : "Masuk ke Portal"}
+                {!isLoading && <ArrowRight className="w-5 h-5 ml-2" />}
               </button>
             </form>
 
