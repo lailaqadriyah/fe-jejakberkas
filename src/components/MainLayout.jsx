@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, FilePlus, FileText, MapPin, History, AlertCircle, 
-  Search, Bell, Menu, ChevronRight, ChevronDown, LogOut
+  Search, Bell, Menu, ChevronRight, ChevronDown, LogOut, ShieldCheck
 } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 function UserAvatarIcon() {
   return (
@@ -16,6 +17,7 @@ function UserAvatarIcon() {
 
 export function MainLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -190,13 +192,14 @@ export function MainLayout() {
                 <MapPin className="w-4 h-4 mr-3" />
                 Tracking Berkas
               </Link>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
+              <Link to="/penalti" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors mt-2 ${location.pathname === '/penalti' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
                 <AlertCircle className="w-4 h-4 mr-3" />
                 Penalti Saya
-              </a>
-
+              </Link>
             </>
           )}
+          
+
         </nav>
 
         {/* User Profile Card */}
@@ -214,11 +217,29 @@ export function MainLayout() {
               </div>
             </div>
           </div>
-          
-          <Link to="/login" className="w-full flex items-center px-4 py-2.5 text-gray-400 hover:text-white transition-colors text-sm font-medium">
+          <button 
+            onClick={() => {
+              Swal.fire({
+                title: 'Keluar dari Sistem?',
+                text: "Anda harus login kembali untuk masuk.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, Keluar!',
+                cancelButtonText: 'Batal'
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  localStorage.removeItem('user');
+                  navigate('/login');
+                }
+              })
+            }}
+            className="w-full flex items-center px-4 py-2.5 text-gray-400 hover:text-white transition-colors text-sm font-medium"
+          >
             <LogOut className="w-4 h-4 mr-3" />
             Logout
-          </Link>
+          </button>
         </div>
       </aside>
 
@@ -315,6 +336,45 @@ export function MainLayout() {
                   </div>
                 </div>
               )}
+              {location.pathname === '/penalti' && (
+                <div>
+                  <h2 className="text-2xl font-bold text-[#112340]">Penalti Saya</h2>
+                  <div className="flex items-center text-xs text-gray-500 mt-1 font-medium">
+                    <span>Staff Kecamatan</span>
+                    <ChevronRight className="w-3 h-3 mx-1" />
+                  </div>
+                </div>
+              )}
+              {location.pathname === '/notifikasi' && (
+                <div>
+                  <h2 className="text-2xl font-bold text-[#112340]">Pusat Notifikasi</h2>
+                  <div className="flex items-center text-xs text-gray-500 mt-1 font-medium">
+                    <span>Dashboard</span>
+                    <ChevronRight className="w-3 h-3 mx-1" />
+                    <span>Notifikasi</span>
+                  </div>
+                </div>
+              )}
+              {location.pathname === '/profil' && (
+                <div>
+                  <h2 className="text-2xl font-bold text-[#112340]">Profil Saya</h2>
+                  <div className="flex items-center text-xs text-gray-500 mt-1 font-medium">
+                    <span>Dashboard</span>
+                    <ChevronRight className="w-3 h-3 mx-1" />
+                    <span>Profil Pengguna</span>
+                  </div>
+                </div>
+              )}
+              {location.pathname === '/aturan-sla' && (
+                <div>
+                  <h2 className="text-2xl font-bold text-[#112340]">Aturan SLA</h2>
+                  <div className="flex items-center text-xs text-gray-500 mt-1 font-medium">
+                    <span>Dashboard</span>
+                    <ChevronRight className="w-3 h-3 mx-1" />
+                    <span>SOP Pelayanan</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           
@@ -329,13 +389,12 @@ export function MainLayout() {
               />
               <Search className="w-4 h-4 text-gray-400 ml-2" />
             </div>
-            
-            <button className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-full transition-colors border border-gray-200 shadow-sm">
+            <Link to="/notifikasi" className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-full transition-colors border border-gray-200 shadow-sm">
               <Bell className="w-5 h-5" />
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-[9px] font-bold flex items-center justify-center border border-white">5</span>
-            </button>
+            </Link>
             
-            <div className="flex items-center p-1.5 pr-4 border border-gray-200 rounded-full cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
+            <Link to="/profil" state={{ mockName: userName, mockRole: userRole }} className="flex items-center p-1.5 pr-4 border border-gray-200 rounded-full cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
               <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mr-3 font-semibold text-sm">
                 {initials}
               </div>
@@ -344,7 +403,7 @@ export function MainLayout() {
                 <p className="text-[10px] text-gray-500 font-medium">{userRole}</p>
               </div>
               <ChevronDown className="w-4 h-4 ml-3 text-gray-400" />
-            </div>
+            </Link>
             
           </div>
         </header>

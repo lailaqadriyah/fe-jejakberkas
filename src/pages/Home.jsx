@@ -193,7 +193,10 @@ export function Home() {
             <span className="font-bold text-[#112340]">Perhatian!</span> Pastikan setiap berkas diproses sesuai SLA untuk menghindari penalti poin pelanggaran.
           </p>
         </div>
-        <button className="flex items-center text-sm font-semibold text-blue-600 bg-white border border-blue-200 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors shadow-sm">
+        <button 
+          onClick={() => navigate('/aturan-sla')}
+          className="flex items-center text-sm font-semibold text-blue-600 bg-white border border-blue-200 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors shadow-sm"
+        >
           Lihat Aturan SLA <ChevronRight className="w-4 h-4 ml-1" />
         </button>
       </div>

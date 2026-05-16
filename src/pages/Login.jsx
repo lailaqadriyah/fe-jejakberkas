@@ -185,7 +185,7 @@ const Login = () => {
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold text-gray-700">Nama Lengkap (Password)</label>
+                  <label className="block text-sm font-semibold text-gray-700">Password</label>
                   <a href="#" className="text-sm font-semibold text-[#0056b3] hover:text-[#004494] transition-colors">
                     Lupa Password?
                   </a>
@@ -196,7 +196,7 @@ const Login = () => {
                   </div>
                   <input 
                     type={showPassword ? "text" : "password"} 
-                    placeholder="Masukkan nama lengkap Anda" 
+                    placeholder="Masukkan password" 
                     value={namaLengkap}
                     onChange={(e) => setNamaLengkap(e.target.value)}
                     required
