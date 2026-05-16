@@ -253,16 +253,7 @@ export function TambahBerkas() {
               </div>
             </div>
 
-            {/* Step 4 */}
-            <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 18 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#1f2937" }}>Step 4 — Checklist Berkas</div>
-              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2, marginBottom: 14 }}>Pastikan semua dokumen fisik sudah lengkap sebelum tracking dimulai.</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <ChecklistItem checked={checklist.kk} onChange={() => setChecklist(p => ({ ...p, kk: !p.kk }))} label="Fotokopi Kartu Keluarga" />
-                <ChecklistItem checked={checklist.polisi} onChange={() => setChecklist(p => ({ ...p, polisi: !p.polisi }))} label="Surat Hilang Polisi" />
-                <ChecklistItem checked={checklist.foto} onChange={() => setChecklist(p => ({ ...p, foto: !p.foto }))} label="Foto tambahan jika diperlukan" />
-              </div>
-            </div>
+          
 
           </div>
 
