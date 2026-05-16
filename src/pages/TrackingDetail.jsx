@@ -1,19 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { Check } from "lucide-react";
-
-const timelineSteps = [
-  { num: 1, title: "Berkas Diterima", desc: "Berkas fisik diterima dan nomor registrasi dibuat.", status: "completed" },
-  { num: 2, title: "Verifikasi Dokumen", desc: "Staff Kecamatan memeriksa kelengkapan dokumen.", status: "inprogress" },
-  { num: 3, title: "Menunggu TTD Camat", desc: "Berkas akan diteruskan ke Camat untuk validasi akhir.", status: "waiting" },
-  { num: 4, title: "Validasi Kecamatan Selesai", desc: "Surat pengantar telah ditandatangani oleh Camat.", status: "notstarted" },
-  { num: 5, title: "Menunggu Dibawa ke Dinas", desc: "Masyarakat membawa surat pengantar ke Dinas.", status: "notstarted" },
-  { num: 6, title: "Berkas Diterima Dinas", desc: "Staff Dinas mengkonfirmasi berkas diterima.", status: "notstarted" },
-  { num: 7, title: "Verifikasi Database", desc: "Data diperiksa pada sistem database kependudukan.", status: "notstarted" },
-  { num: 8, title: "Proses Cetak", desc: "Dokumen diproses dan dicetak oleh Dinas.", status: "notstarted" },
-  { num: 9, title: "Approval Kepala Dinas", desc: "Menunggu validasi akhir dari Kepala Dinas.", status: "notstarted" },
-  { num: 10, title: "Dokumen Selesai", desc: "Dokumen legal selesai diproses.", status: "notstarted" },
-  { num: 11, title: "Siap Diambil di Kecamatan", desc: "Dokumen siap diambil oleh masyarakat.", status: "notstarted" },
-];
 
 function StatusBadge({ status }) {
   const map = {
@@ -22,7 +9,7 @@ function StatusBadge({ status }) {
     waiting: { label: "Waiting", color: "#f97316", bg: "#fff7ed", border: "#fed7aa" },
     notstarted: { label: "Not Started", color: "#6b7280", bg: "#f3f4f6", border: "#f3f4f6" },
   };
-  const s = map[status];
+  const s = map[status] || map.notstarted;
   return (
     <span style={{ padding: "3px 8px", border: `1px solid ${s.border}`, color: s.color, background: s.bg, borderRadius: 8, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" }}>
       {s.label}
@@ -55,23 +42,102 @@ function StepCircle({ step }) {
 }
 
 export function TrackingDetail() {
+  const { no_registrasi } = useParams();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchTracking = async () => {
+      try {
+        const response = await fetch(`http://localhost:3000/api/tracking/${no_registrasi || 'AZ005'}`);
+        const result = await response.json();
+        if (result.success) setData(result.data);
+      } catch (error) {
+        console.error("Gagal sinkron BE:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTracking();
+  }, [no_registrasi]);
+
+  const handleNextStep = async () => {
+    setActionLoading(true);
+    try {
+      const order = [
+        "VERIFIKASI_BERKAS_KECAMATAN", "PEMBUATAN_SURAT_PENGANTAR", "MENUNGGU_TTD_CAMAT", "SELESAI_KECAMATAN",
+        "ANTREAN_LOKET_DINAS", "VERIFIKASI_BERKAS_DINAS", "VERIFIKASI_SIAK", "PROSES_CETAK", 
+        "VALIDASI_PEJABAT", "DOKUMEN_SELESAI", "SIAP_DIAMBIL_DI_KECAMATAN"
+      ];
+      const currentIdx = order.indexOf(data.posisi_berkas);
+      if (currentIdx === -1 || currentIdx >= order.length - 1) {
+        alert("Berkas sudah di tahap akhir.");
+        return;
+      }
+      const nextPos = order[currentIdx + 1];
+      const nextTahapan = nextPos === "SELESAI_KECAMATAN" ? "KECAMATAN" : 
+        nextPos === "ANTREAN_LOKET_DINAS" || nextPos.startsWith("VERIFIKASI") || 
+        nextPos === "PROSES_CETAK" || nextPos === "VALIDASI_PEJABAT" || 
+        nextPos === "DOKUMEN_SELESAI" || nextPos === "SIAP_DIAMBIL_DI_KECAMATAN" ? "DINAS" : "KECAMATAN";
+
+      const res = await fetch(`http://localhost:3000/api/update-status/${data.no_registrasi}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          posisi_berkas_baru: nextPos,
+          penanggung_jawab_baru_id: nextTahapan === "DINAS" ? "STAFF_DINAS" : "STAFF_KECAMATAN",
+          tahapan_baru: nextTahapan,
+          keterangan_log: `Berkas lanjut ke tahap: ${nextPos}`,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert(`Berkas maju ke tahap ${nextPos}!`);
+        window.location.reload();
+      } else {
+        alert("Gagal: " + json.message);
+      }
+    } catch (err) {
+      alert("Gagal terhubung ke server.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  if (loading) return <div style={{ padding: 40 }}>Memuat Detail Tracking...</div>;
+  if (!data) return <div style={{ padding: 40 }}>Berkas tidak ditemukan.</div>;
+
+  const order = [
+    "VERIFIKASI_BERKAS_KECAMATAN", "PEMBUATAN_SURAT_PENGANTAR", "MENUNGGU_TTD_CAMAT", "SELESAI_KECAMATAN",
+    "ANTREAN_LOKET_DINAS", "VERIFIKASI_BERKAS_DINAS", "VERIFIKASI_SIAK", "PROSES_CETAK", 
+    "VALIDASI_PEJABAT", "DOKUMEN_SELESAI", "SIAP_DIAMBIL_DI_KECAMATAN"
+  ];
+  const currentIndex = order.indexOf(data.posisi_berkas);
+  const getStepStatus = (idx) => idx < currentIndex ? "completed" : idx === currentIndex ? "inprogress" : "notstarted";
+
+  const timelineSteps = [
+    { num: 1, title: "Berkas Diterima", desc: "Berkas fisik diterima dan nomor registrasi dibuat.", status: getStepStatus(0) },
+    { num: 2, title: "Verifikasi Dokumen", desc: "Staff Kecamatan memeriksa kelengkapan dokumen.", status: getStepStatus(1) },
+    { num: 3, title: "Menunggu TTD Camat", desc: "Berkas akan diteruskan ke Camat untuk validasi akhir.", status: getStepStatus(2) },
+    { num: 4, title: "Validasi Kecamatan Selesai", desc: "Surat pengantar telah ditandatangani oleh Camat.", status: getStepStatus(3) },
+    { num: 5, title: "Menunggu Dibawa ke Dinas", desc: "Masyarakat membawa surat pengantar ke Dinas.", status: getStepStatus(4) },
+    { num: 6, title: "Berkas Diterima Dinas", desc: "Staff Dinas mengkonfirmasi berkas diterima.", status: getStepStatus(5) },
+    { num: 7, title: "Verifikasi Database", desc: "Data diperiksa pada sistem database kependudukan.", status: getStepStatus(6) },
+    { num: 8, title: "Proses Cetak", desc: "Dokumen diproses dan dicetak oleh Dinas.", status: getStepStatus(7) },
+    { num: 9, title: "Approval Kepala Dinas", desc: "Menunggu validasi akhir dari Kepala Dinas.", status: getStepStatus(8) },
+    { num: 10, title: "Dokumen Selesai", desc: "Dokumen legal selesai diproses.", status: getStepStatus(9) },
+    { num: 11, title: "Siap Diambil di Kecamatan", desc: "Dokumen siap diambil oleh masyarakat.", status: getStepStatus(10) },
+  ];
+
   return (
-    <div style={{ 
-  width: "100%",
-  maxWidth: "1450px",
-  margin: "0 auto",
-  padding: 24,
-  fontFamily: "system-ui, -apple-system, sans-serif",
-  display: "flex",
-  flexDirection: "column",
-  gap: 24
-}}>
+    <div style={{ width: "100%", maxWidth: "1450px", margin: "0 auto", padding: 24, fontFamily: "system-ui, -apple-system, sans-serif", display: "flex", flexDirection: "column", gap: 24 }}>
 
       {/* Top Card */}
       <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", padding: "28px 32px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <div>
-            <h2 style={{ fontSize: 28, fontWeight: 900, color: "#112340", letterSpacing: -1, margin: 0 }}>JB-2025-00128</h2>
+            <h2 style={{ fontSize: 28, fontWeight: 900, color: "#112340", letterSpacing: -1, margin: 0 }}>{data.no_registrasi}</h2>
             <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>Detail tracking pengajuan layanan masyarakat</p>
           </div>
           <button style={{ padding: "8px 16px", border: "1px solid #bfdbfe", color: "#2563eb", borderRadius: 10, fontSize: 11, fontWeight: 700, background: "#fff", cursor: "pointer" }}>
@@ -81,14 +147,14 @@ export function TrackingDetail() {
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
           {[
-            { label: "Nama Warga", value: "Andi Saputra" },
-            { label: "Layanan", value: "KTP Rusak" },
-            { label: "PIC Saat Ini", value: "Staff Kecamatan" },
-            { label: "Estimasi Selesai", value: "14:30" },
-            { label: "SLA", value: "1 jam 20 menit tersisa", blue: true },
-            { label: "Status Saat Ini", value: "Verifikasi Dokumen" },
-            { label: "Nomor HP", value: "0812-XXXX-7788" },
-            { label: "Kecamatan", value: "Kuranji" },
+            { label: "Nama Warga", value: data.nama_warga },
+            { label: "Layanan", value: data.layanan === 1 ? "KTP" : data.layanan === 2 ? "KK" : "Akta" },
+            { label: "PIC Saat Ini", value: data.penanggung_jawab_id || "Staff" },
+            { label: "Estimasi Selesai", value: data.kalkulasi_sla?.estimasi_selesai ? new Date(data.kalkulasi_sla.estimasi_selesai).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "-" },
+            { label: "SLA", value: `${data.kalkulasi_sla?.sisa_waktu_menit} menit tersisa`, blue: true },
+            { label: "Status Saat Ini", value: data.posisi_berkas.replace(/_/g, " ") },
+            { label: "Nomor HP", value: data.no_hp || "-" },
+            { label: "Kecamatan", value: data.id_kecamatan_asal },
           ].map(({ label, value, blue }) => (
             <div key={label} style={{ background: "rgba(249,250,251,0.5)", border: "1px solid #f3f4f6", borderRadius: 12, padding: "14px 16px" }}>
               <p style={{ fontSize: 10, color: "#9ca3af", margin: "0 0 4px" }}>{label}</p>
@@ -98,34 +164,19 @@ export function TrackingDetail() {
         </div>
       </div>
 
-      {/* Bottom two columns */}
-      <div style={{ 
-  display: "flex",
-  gap: 24,
-  alignItems: "flex-start",
-  width: "100%"
-}}>
-
-        {/* Left column */}
-        <div style={{ 
-  flex: 1.4,
-  display: "flex",
-  flexDirection: "column",
-  gap: 24,
-  minWidth: 0
-}}>
+      <div style={{ display: "flex", gap: 24, alignItems: "flex-start", width: "100%" }}>
+        <div style={{ flex: 1.4, display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
 
           {/* Status Utama */}
           <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", padding: "22px 24px" }}>
             <h3 style={{ fontSize: 13, fontWeight: 700, color: "#112340", margin: "0 0 4px" }}>Status Utama</h3>
             <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 20px" }}>Ringkasan posisi berkas dan risiko penalti.</p>
-
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
               {[
-                { label: "Status", value: "Verifikasi\nDokumen" },
-                { label: "Progress", value: "2 dari 11 tahap" },
-                { label: "PIC", value: "Staff Kecamatan" },
-                { label: "Penalty Risk", value: "Aman", green: true },
+                { label: "Status", value: data.posisi_berkas.replace(/_/g, "\n") },
+                { label: "Progress", value: `${currentIndex + 1} dari 11 tahap` },
+                { label: "PIC", value: data.penanggung_jawab_id || "Staff" },
+                { label: "Penalty Risk", value: data.kalkulasi_sla?.status_peringatan || "Aman", green: data.kalkulasi_sla?.status_peringatan === "Aman" },
               ].map(({ label, value, green }) => (
                 <div key={label} style={{ border: "1px solid #f3f4f6", borderRadius: 12, padding: "14px 16px" }}>
                   <p style={{ fontSize: 10, color: "#9ca3af", margin: "0 0 4px" }}>{label}</p>
@@ -133,31 +184,21 @@ export function TrackingDetail() {
                 </div>
               ))}
             </div>
-
             <div style={{ height: 8, width: "100%", background: "#f3f4f6", borderRadius: 99, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: "18%", background: "#3b82f6", borderRadius: 99 }} />
+              <div style={{ height: "100%", width: `${((currentIndex + 1) / 11) * 100}%`, background: "#3b82f6", borderRadius: 99 }} />
             </div>
           </div>
 
           {/* Timeline Progress */}
           <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", padding: "32px" }}>
             <h3 style={{ fontSize: 13, fontWeight: 700, color: "#112340", margin: "0 0 4px" }}>Timeline Progress</h3>
-            <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 28px" }}>Pantau setiap tahapan pelayanan dari kecamatan hingga selesai.</p>
-
             <div style={{ position: "relative" }}>
-              {/* Vertical line */}
               <div style={{ position: "absolute", left: 19, top: 0, bottom: 0, width: 2, background: "linear-gradient(to bottom, transparent, #e5e7eb, transparent)", zIndex: 0 }} />
-
               <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
                 {timelineSteps.map((step) => (
                   <div key={step.num} style={{ display: "flex", alignItems: "center", gap: 16, opacity: step.status === "notstarted" ? 0.6 : 1 }}>
                     <StepCircle step={step} />
-                    <div style={{
-                      flex: 1, background: "#fff",
-                      border: step.status === "inprogress" ? "2px solid #bfdbfe" : "1px solid #f3f4f6",
-                      borderRadius: 12, padding: "14px 16px",
-                      display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
-                    }}>
+                    <div style={{ flex: 1, border: step.status === "inprogress" ? "2px solid #bfdbfe" : "1px solid #f3f4f6", borderRadius: 12, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
                       <div>
                         <h4 style={{ fontSize: 13, fontWeight: 700, color: step.status === "notstarted" ? "#6b7280" : "#1f2937", margin: "0 0 3px" }}>{step.title}</h4>
                         <p style={{ fontSize: 10, color: step.status === "notstarted" ? "#9ca3af" : "#6b7280", margin: 0 }}>{step.desc}</p>
@@ -170,47 +211,30 @@ export function TrackingDetail() {
             </div>
           </div>
 
-          {/* Action Card */}
+          {/* Action Card (INI YANG TADI ILANG) */}
           <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", padding: "22px 24px" }}>
             <h3 style={{ fontSize: 13, fontWeight: 700, color: "#112340", margin: "0 0 4px" }}>Aksi Staff Kecamatan</h3>
             <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 16px" }}>Gunakan tombol aksi sesuai kondisi proses berkas saat ini.</p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button style={{ padding: "9px 22px", background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                Next Step
-              </button>
-              <button style={{ padding: "9px 22px", background: "#fff", color: "#2563eb", border: "1px solid #93c5fd", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                Tambah Catatan
-              </button>
-              <button style={{ padding: "9px 22px", background: "#fff", color: "#ef4444", border: "1px solid #fca5a5", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                Tandai Bermasalah
-              </button>
+              <button onClick={handleNextStep} disabled={actionLoading} style={{ padding: "9px 22px", background: actionLoading ? "#9ca3af" : "#2563eb", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: actionLoading ? "default" : "pointer" }}>{actionLoading ? "Memproses..." : "Next Step"}</button>
+              <button style={{ padding: "9px 22px", background: "#fff", color: "#2563eb", border: "1px solid #93c5fd", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Tambah Catatan</button>
+              <button style={{ padding: "9px 22px", background: "#fff", color: "#ef4444", border: "1px solid #fca5a5", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Tandai Bermasalah</button>
             </div>
           </div>
-
         </div>
 
         {/* Right column */}
-        <div style={{ 
-  width: 360,
-  flexShrink: 0,
-  display: "flex",
-  flexDirection: "column",
-  gap: 24
-}}>
-
+        <div style={{ width: 360, flexShrink: 0, display: "flex", flexDirection: "column", gap: 24 }}>
           {/* Activity Log */}
           <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", padding: "22px 24px" }}>
             <h3 style={{ fontSize: 13, fontWeight: 700, color: "#112340", margin: "0 0 20px" }}>Activity Log</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {[
-                { time: "09:00", text: "Berkas didaftarkan oleh Staff Kecamatan." },
-                { time: "09:05", text: "Nomor registrasi JB-2025-00128 dibuat." },
-                { time: "09:15", text: "Berkas masuk tahap Verifikasi Dokumen." },
-                { time: "09:30", text: "Checklist dokumen lengkap." },
-              ].map(({ time, text }) => (
-                <div key={time} style={{ display: "flex", gap: 12 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#2563eb", width: 40, flexShrink: 0 }}>{time}</span>
-                  <p style={{ fontSize: 11, color: "#374151", margin: 0, lineHeight: 1.4 }}>{text}</p>
+              {data.history?.slice(-5).map((log, i) => (
+                <div key={i} style={{ display: "flex", gap: 12 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#2563eb", width: 40, flexShrink: 0 }}>
+                    {log.waktu ? new Date(log.waktu._seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "09:00"}
+                  </span>
+                  <p style={{ fontSize: 11, color: "#374151", margin: 0, lineHeight: 1.4 }}>{log.keterangan}</p>
                 </div>
               ))}
             </div>
@@ -234,10 +258,10 @@ export function TrackingDetail() {
             <h3 style={{ fontSize: 13, fontWeight: 700, color: "#112340", margin: "0 0 14px" }}>Approval History</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
               {[
-                { name: "Staff Kecamatan", status: "Diproses", dim: false },
-                { name: "Camat", status: "Belum TTD", dim: true },
-                { name: "Staff Dinas", status: "Belum Mulai", dim: true },
-                { name: "Kepala Dinas", status: "Belum Mulai", dim: true, last: true },
+                { name: "Staff Kecamatan", status: currentIndex >= 3 ? "Selesai" : "Diproses", dim: currentIndex < 0 },
+                { name: "Camat", status: currentIndex >= 3 ? "Sudah TTD" : "Belum TTD", dim: currentIndex < 2 },
+                { name: "Staff Dinas", status: currentIndex >= 5 ? "Diproses" : "Belum Mulai", dim: currentIndex < 4 },
+                { name: "Kepala Dinas", status: currentIndex >= 9 ? "Selesai" : "Belum Mulai", dim: currentIndex < 8, last: true },
               ].map(({ name, status, dim, last }) => (
                 <div key={name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, paddingBottom: last ? 0 : 12, marginBottom: last ? 0 : 12, borderBottom: last ? "none" : "1px solid #f3f4f6" }}>
                   <span style={{ color: "#6b7280" }}>{name}</span>
@@ -254,7 +278,6 @@ export function TrackingDetail() {
               Jika proses verifikasi tidak selesai sebelum estimasi, penalti akan diberikan kepada Staff Kecamatan. Jika sudah masuk tahap TTD, penalti menjadi tanggung jawab Camat.
             </p>
           </div>
-
         </div>
       </div>
     </div>

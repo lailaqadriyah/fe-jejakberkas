@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, FilePlus, FileText, MapPin, History, AlertCircle, 
   Search, Bell, Menu, ChevronRight, ChevronDown, LogOut
 } from 'lucide-react';
 
-// Helper component for generic user avatar
 function UserAvatarIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
@@ -17,8 +16,19 @@ function UserAvatarIcon() {
 
 export function MainLayout() {
   const location = useLocation();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('user');
+    if (saved) setUser(JSON.parse(saved));
+  }, []);
+
   const isCamat = location.pathname.startsWith('/camat');
   const isDinas = location.pathname.startsWith('/dinas');
+
+  const userName = user?.nama_lengkap || (isCamat ? 'Drs. Ahmad Fauzi' : isDinas ? 'Rina Pramesti' : 'Siti Nurhaliza');
+  const userRole = user?.role || (isCamat ? 'Camat Kuranji' : isDinas ? 'Staff Dinas Dukcapil' : 'Staff Kecamatan');
+  const initials = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   
   return (
     <div className="flex h-screen bg-[#f4f7fb] font-sans text-gray-800">
@@ -125,8 +135,8 @@ export function MainLayout() {
               <UserAvatarIcon />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{isCamat ? 'Drs. Ahmad Fauzi' : isDinas ? 'Rina Pramesti' : 'Siti Nurhaliza'}</p>
-              <p className="text-[11px] text-gray-400 truncate mb-1">{isCamat ? 'Camat Kuranji' : isDinas ? 'Staff Dinas Dukcapil' : 'Staff Kecamatan'}</p>
+              <p className="text-sm font-semibold text-white truncate">{userName}</p>
+              <p className="text-[11px] text-gray-400 truncate mb-1">{userRole}</p>
               <div className="flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-1.5 shadow-[0_0_5px_rgba(34,197,94,0.6)]"></div>
                 <span className="text-[10px] text-green-400">Available</span>
@@ -236,11 +246,11 @@ export function MainLayout() {
             
             <div className="flex items-center p-1.5 pr-4 border border-gray-200 rounded-full cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
               <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mr-3 font-semibold text-sm">
-                {isCamat ? 'AF' : isDinas ? 'RP' : 'SN'}
+                {initials}
               </div>
               <div>
-                <p className="text-sm font-bold text-gray-800 leading-tight">{isCamat ? 'Drs. Ahmad Fauzi' : isDinas ? 'Rina Pramesti' : 'Siti Nurhaliza'}</p>
-                <p className="text-[10px] text-gray-500 font-medium">{isCamat ? 'Camat Kuranji' : isDinas ? 'Staff Dinas Dukcapil' : 'Staff Kecamatan'}</p>
+                <p className="text-sm font-bold text-gray-800 leading-tight">{userName}</p>
+                <p className="text-[10px] text-gray-500 font-medium">{userRole}</p>
               </div>
               <ChevronDown className="w-4 h-4 ml-3 text-gray-400" />
             </div>

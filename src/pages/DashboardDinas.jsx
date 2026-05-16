@@ -1,9 +1,125 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const API = 'http://localhost:3000/api';
 
 export function DashboardDinas() {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState(null);
+  const [berkasDinas, setBerkasDinas] = useState([]);
+  const [inputNoReg, setInputNoReg] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [statsRes, dinasRes] = await Promise.all([
+        fetch(`${API}/berkas/stats`),
+        fetch(`${API}/berkas?tahapan=DINAS`),
+      ]);
+      const statsJson = await statsRes.json();
+      const dinasJson = await dinasRes.json();
+      if (statsJson.success) setStats(statsJson.data);
+      if (dinasJson.success) setBerkasDinas(dinasJson.data);
+    } catch (err) {
+      console.error('Gagal fetch data dinas:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const konfirmasiBerkasDiterima = async () => {
+    if (!inputNoReg.trim()) {
+      alert('Masukkan nomor registrasi!');
+      return;
+    }
+    try {
+      const res = await fetch(`${API}/update-status/${inputNoReg.trim()}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          posisi_berkas_baru: 'VERIFIKASI_BERKAS_DINAS',
+          penanggung_jawab_baru_id: 'STAFF_DINAS',
+          tahapan_baru: 'DINAS',
+          keterangan_log: 'Berkas diterima di Dinas dan mulai proses verifikasi.',
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert(`Berkas ${inputNoReg.trim()} berhasil dikonfirmasi diterima di Dinas!`);
+        setInputNoReg('');
+        fetchData();
+      } else {
+        alert('Gagal: ' + json.message);
+      }
+    } catch (err) {
+      alert('Gagal terhubung ke server.');
+    }
+  };
+
+  const nextStep = async (noReg) => {
+    try {
+      const order = [
+        'VERIFIKASI_BERKAS_KECAMATAN', 'PEMBUATAN_SURAT_PENGANTAR', 'MENUNGGU_TTD_CAMAT',
+        'SELESAI_KECAMATAN', 'ANTREAN_LOKET_DINAS', 'VERIFIKASI_BERKAS_DINAS',
+        'VERIFIKASI_SIAK', 'PROSES_CETAK', 'VALIDASI_PEJABAT',
+        'DOKUMEN_SELESAI', 'SIAP_DIAMBIL_DI_KECAMATAN',
+      ];
+      const berkas = berkasDinas.find(b => b.no_registrasi === noReg);
+      if (!berkas) return;
+      const currentIdx = order.indexOf(berkas.posisi_berkas);
+      if (currentIdx === -1 || currentIdx >= order.length - 1) {
+        alert('Berkas sudah di tahap akhir.');
+        return;
+      }
+      const nextPos = order[currentIdx + 1];
+      const nextTahapan = nextPos === 'ANTREAN_LOKET_DINAS' || nextPos.startsWith('VERIFIKASI') || nextPos === 'PROSES_CETAK' || nextPos === 'VALIDASI_PEJABAT' || nextPos === 'DOKUMEN_SELESAI' || nextPos === 'SIAP_DIAMBIL_DI_KECAMATAN' ? 'DINAS' : 'KECAMATAN';
+
+      const res = await fetch(`${API}/update-status/${noReg}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          posisi_berkas_baru: nextPos,
+          penanggung_jawab_baru_id: 'STAFF_DINAS',
+          tahapan_baru: nextTahapan,
+          keterangan_log: `Berkas lanjut ke tahap: ${nextPos}`,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert(`Berkas ${noReg} maju ke tahap ${nextPos}!`);
+        fetchData();
+      } else {
+        alert('Gagal: ' + json.message);
+      }
+    } catch (err) {
+      alert('Gagal terhubung ke server.');
+    }
+  };
+
+  if (loading) {
+    return <div style={{ padding: 40, fontFamily: 'sans-serif', fontSize: 14, color: '#6b7280' }}>Memuat data dashboard Dinas...</div>;
+  }
+
+  const getStatusStyle = (posisi) => {
+    const map = {
+      'VERIFIKASI_BERKAS_DINAS': ['Verifikasi Database', '#2563eb', '#eff6ff', '#bfdbfe'],
+      'VERIFIKASI_SIAK': ['Verifikasi Database', '#2563eb', '#eff6ff', '#bfdbfe'],
+      'ANTREAN_LOKET_DINAS': ['Antrean Loket', '#f97316', '#fff7ed', '#fed7aa'],
+      'PROSES_CETAK': ['Proses Cetak', '#16a34a', '#f0fdf4', '#bbf7d0'],
+      'VALIDASI_PEJABAT': ['Approval Kepala Dinas', '#f97316', '#fff7ed', '#fed7aa'],
+      'DOKUMEN_SELESAI': ['Dokumen Selesai', '#16a34a', '#f0fdf4', '#bbf7d0'],
+      'SIAP_DIAMBIL_DI_KECAMATAN': ['Siap Diambil', '#16a34a', '#f0fdf4', '#bbf7d0'],
+    };
+    return map[posisi] || [posisi.replace(/_/g, ' '), '#6b7280', '#f3f4f6', '#e5e7eb'];
+  };
+
   return (
     <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', fontSize: 13, padding: '20px 24px' }}>
-      
       {/* Status Banner */}
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -15,7 +131,7 @@ export function DashboardDinas() {
             <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>Aktifkan tracking tahap Dinas setelah berkas fisik diterima dari masyarakat.</div>
           </div>
         </div>
-        <button style={{ padding: '10px 20px', borderRadius: 8, fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer', background: '#1a4fca', color: '#fff' }}>
+        <button onClick={() => document.getElementById('regInput').focus()} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer', background: '#1a4fca', color: '#fff' }}>
           Konfirmasi Berkas Diterima
         </button>
       </div>
@@ -23,10 +139,10 @@ export function DashboardDinas() {
       {/* Metric Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 18 }}>
         {[
-          { label: 'Berkas Masuk', value: 16, sub: 'Diterima hari ini', iconColor: '#3b82f6', iconBg: '#eff6ff', border: '#bfdbfe', icon: <div style={{width: 12, height: 12, background: '#3b82f6', borderRadius: 2}}></div> },
-          { label: 'Sedang Diproses', value: 11, sub: 'Dalam tahap Dinas', iconColor: '#10b981', iconBg: '#f0fdf4', border: '#a7f3d0', icon: '▦' },
-          { label: 'Menunggu Approval', value: 5, sub: 'Kepala Dinas', iconColor: '#f97316', iconBg: '#fff7ed', border: '#fed7aa', icon: '⏳' },
-          { label: 'Terlambat', value: 2, sub: 'Melewati SLA Dinas', iconColor: '#ef4444', iconBg: '#fef2f2', border: '#fecaca', icon: '!' },
+          { label: 'Total Berkas', value: stats?.total_berkas ?? 0, sub: 'Semua berkas', iconColor: '#3b82f6', iconBg: '#eff6ff', border: '#bfdbfe', icon: '#' },
+          { label: 'Sedang Diproses', value: stats?.sedang_diproses ?? 0, sub: 'Dalam proses', iconColor: '#10b981', iconBg: '#f0fdf4', border: '#a7f3d0', icon: '▦' },
+          { label: 'Berkas Selesai', value: stats?.selesai ?? 0, sub: 'Sudah selesai', iconColor: '#16a34a', iconBg: '#f0fdf4', border: '#a7f3d0', icon: '✓' },
+          { label: 'Menunggu TTD', value: stats?.menunggu_ttd ?? 0, sub: 'Di kecamatan', iconColor: '#f97316', iconBg: '#fff7ed', border: '#fed7aa', icon: '⏳' },
         ].map((m, i) => (
           <div key={i} style={{ background: '#fff', borderRadius: 14, padding: 18, display: 'flex', gap: 14, alignItems: 'flex-start', border: `1.5px solid ${m.border}` }}>
             <div style={{ width: 42, height: 42, borderRadius: 10, background: m.iconBg, border: `1px solid ${m.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18, color: m.iconColor, fontWeight: 800 }}>
@@ -43,10 +159,7 @@ export function DashboardDinas() {
 
       {/* Main Grid */}
       <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
-
-        {/* Left Column */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 18 }}>
-
           {/* Berkas Aktif Dinas */}
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, overflow: 'hidden' }}>
             <div style={{ padding: '18px 22px 14px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -68,88 +181,42 @@ export function DashboardDinas() {
                   </tr>
                 </thead>
                 <tbody>
-                  {[
-                    { reg: 'JB-2025-00129', nama: 'Siti Aminah', layanan: 'KK Baru', status: 'Verifikasi Database', statusColor: '#2563eb', statusBg: '#eff6ff', statusBorder: '#bfdbfe', sla: '1j 40m tersisa', slaColor: '#2563eb', est: '15:30', showNext: true },
-                    { reg: 'JB-2025-00136', nama: 'Andi Saputra', layanan: 'KTP Rusak', status: 'Proses Cetak', statusColor: '#16a34a', statusBg: '#f0fdf4', statusBorder: '#bbf7d0', sla: '55m tersisa', slaColor: '#2563eb', est: '14:45', showNext: true },
-                    { reg: 'JB-2025-00138', nama: 'Maya Putri', layanan: 'Akta Baru', status: 'Menunggu Approval', statusColor: '#f97316', statusBg: '#fff7ed', statusBorder: '#fed7aa', sla: '2j 10m tersisa', slaColor: '#2563eb', est: '16:20', showNext: false },
-                    { reg: 'JB-2025-00141', nama: 'Rudi Hartono', layanan: 'KK Rusak', status: 'Terlambat', statusColor: '#ef4444', statusBg: '#fef2f2', statusBorder: '#fecaca', sla: 'Lewat 25m', slaColor: '#ef4444', est: '12:30', showNext: true },
-                  ].map((row, i) => (
-                    <tr key={i} style={{ borderBottom: i < 3 ? '1px solid #f3f4f6' : 'none' }}>
-                      <td style={{ padding: '13px 18px', fontSize: 11, color: '#2563eb', fontWeight: 700 }}>{row.reg}</td>
-                      <td style={{ padding: '13px 18px', fontSize: 11, fontWeight: 600, color: '#111827' }}>{row.nama}</td>
-                      <td style={{ padding: '13px 18px', fontSize: 11, fontWeight: 600, color: '#111827' }}>{row.layanan}</td>
-                      <td style={{ padding: '13px 18px' }}>
-                        <span style={{
-                          display: 'inline-block', padding: '4px 9px', fontSize: 10, fontWeight: 800,
-                          color: row.statusColor, background: row.statusBg,
-                          border: `1px solid ${row.statusBorder}`, borderRadius: 5, whiteSpace: 'nowrap',
-                        }}>
-                          {row.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '13px 18px', fontSize: 11, fontWeight: 700, color: row.slaColor }}>{row.sla}</td>
-                      <td style={{ padding: '13px 18px', fontSize: 11, color: '#111827' }}>{row.est}</td>
-                      <td style={{ padding: '13px 18px' }}>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          {row.showNext && <button style={{ padding: '5px 10px', background: '#1a4fca', color: '#fff', border: 'none', borderRadius: 6, fontSize: 10, fontWeight: 800, cursor: 'pointer' }}>Next Step</button>}
-                          <button style={{ padding: '5px 10px', background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 10, fontWeight: 800, cursor: 'pointer' }}>Detail</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {berkasDinas.length === 0 ? (
+                    <tr><td colSpan={7} style={{ padding: 20, textAlign: 'center', color: '#9ca3af', fontSize: 11 }}>Belum ada berkas di tahap Dinas.</td></tr>
+                  ) : (
+                    berkasDinas.map((row, i) => {
+                      const [statusLabel, statusColor, statusBg, statusBorder] = getStatusStyle(row.posisi_berkas);
+                      const isNextable = row.posisi_berkas !== 'SIAP_DIAMBIL_DI_KECAMATAN' && row.posisi_berkas !== 'DOKUMEN_SELESAI';
+                      return (
+                        <tr key={i} style={{ borderBottom: i < berkasDinas.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                          <td style={{ padding: '13px 18px', fontSize: 11, color: '#2563eb', fontWeight: 700 }}>{row.no_registrasi}</td>
+                          <td style={{ padding: '13px 18px', fontSize: 11, fontWeight: 600, color: '#111827' }}>{row.nama_warga}</td>
+                          <td style={{ padding: '13px 18px', fontSize: 11, fontWeight: 600, color: '#111827' }}>{row.layanan === 1 ? 'KTP' : row.layanan === 2 ? 'KK' : 'Akta'}</td>
+                          <td style={{ padding: '13px 18px' }}>
+                            <span style={{ display: 'inline-block', padding: '4px 9px', fontSize: 10, fontWeight: 800, color: statusColor, background: statusBg, border: `1px solid ${statusBorder}`, borderRadius: 5, whiteSpace: 'nowrap' }}>
+                              {statusLabel}
+                            </span>
+                          </td>
+                          <td style={{ padding: '13px 18px', fontSize: 11, fontWeight: 700, color: '#2563eb' }}>{row.estimasi_ml_kecamatan?.range || '-'}</td>
+                          <td style={{ padding: '13px 18px', fontSize: 11, color: '#111827' }}>{row.estimasi_ml_kecamatan?.predicted_minutes ? `${row.estimasi_ml_kecamatan.predicted_minutes}m` : '-'}</td>
+                          <td style={{ padding: '13px 18px' }}>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              {isNextable && <button onClick={() => nextStep(row.no_registrasi)} style={{ padding: '5px 10px', background: '#1a4fca', color: '#fff', border: 'none', borderRadius: 6, fontSize: 10, fontWeight: 800, cursor: 'pointer' }}>Next Step</button>}
+                              <button onClick={() => navigate(`/tracking/${row.no_registrasi}`)} style={{ padding: '5px 10px', background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 10, fontWeight: 800, cursor: 'pointer' }}>Detail</button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
-
-          {/* Alur Proses Dinas */}
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, padding: '18px 22px' }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#0f1f3d' }}>Alur Proses Dinas</div>
-            <div style={{ fontSize: 11, color: '#6b7280', marginTop: 3, marginBottom: 18 }}>Tahapan standar setelah berkas diterima di Dinas.</div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {[
-                { num: '✓', title: 'Berkas Diterima', desc: 'Staff Dinas mengonfirmasi berkas fisik sudah masuk.', status: 'Completed', color: '#10b981', bg: '#f0fdf4', border: '#a7f3d0' },
-                { num: '2', title: 'Verifikasi Database', desc: 'Pengecekan data pada sistem kependudukan.', status: 'Active', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
-                { num: '3', title: 'Input Data', desc: 'Staff memasukkan data ke sistem layanan Dinas.', status: 'Waiting', color: '#f97316', bg: '#fff7ed', border: '#fed7aa' },
-                { num: '4', title: 'Proses Cetak', desc: 'Dokumen fisik diproses dan dicetak.', status: 'Not Started', color: '#9ca3af', bg: '#f3f4f6', border: '#e5e7eb' },
-                { num: '5', title: 'Menunggu Approval Kepala Dinas', desc: 'Dokumen menunggu validasi akhir dari Kepala Dinas.', status: 'Not Started', color: '#9ca3af', bg: '#f3f4f6', border: '#e5e7eb' },
-                { num: '6', title: 'Selesai', desc: 'Dokumen selesai dan siap dikirim kembali ke Kecamatan.', status: 'Not Started', color: '#9ca3af', bg: '#f3f4f6', border: '#e5e7eb' },
-              ].map((step, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', border: `1px solid ${step.border}`, borderRadius: 10, background: step.status === 'Completed' || step.status === 'Active' ? '#fff' : '#fafafa' }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: step.bg, border: `1px solid ${step.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: step.color, flexShrink: 0 }}>
-                    {step.num}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#111827' }}>{step.title}</div>
-                    <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2 }}>{step.desc}</div>
-                  </div>
-                  <span style={{ padding: '4px 10px', fontSize: 10, fontWeight: 800, color: step.color, background: step.bg, border: `1px solid ${step.border}`, borderRadius: 6 }}>
-                    {step.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Catatan SLA */}
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, padding: '18px 22px' }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#0f1f3d' }}>Catatan SLA</div>
-            <div style={{ fontSize: 11, color: '#6b7280', marginTop: 3, marginBottom: 16 }}>Informasi tanggung jawab proses.</div>
-            
-            <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#f97316', marginBottom: 4 }}>Perhatian</div>
-              <div style={{ fontSize: 11, color: '#6b7280', lineHeight: 1.5 }}>
-                Jika berkas terlambat saat proses Staff Dinas, penalti diberikan kepada Staff Dinas. Jika sudah masuk approval akhir, tanggung jawab berpindah ke Kepala Dinas.
-              </div>
-            </div>
-          </div>
-
         </div>
 
         {/* Right Column */}
         <div style={{ width: 340, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 18 }}>
-
           {/* Konfirmasi Berkas */}
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, padding: 22 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: '#0f1f3d', marginBottom: 4 }}>Konfirmasi Berkas</div>
@@ -157,12 +224,15 @@ export function DashboardDinas() {
             <div style={{ background: '#0e2a5c', borderRadius: 12, padding: 22, color: '#fff' }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', marginBottom: 6 }}>Input Nomor Registrasi</div>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, marginBottom: 16 }}>Gunakan nomor registrasi dari tahap Kecamatan untuk memulai proses Dinas.</div>
-              <input 
-                type="text" 
-                defaultValue="JB-2025-00129" 
-                style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: 'none', fontSize: 12, fontWeight: 700, color: '#111827', marginBottom: 12, outline: 'none' }} 
+              <input
+                id="regInput"
+                type="text"
+                value={inputNoReg}
+                onChange={(e) => setInputNoReg(e.target.value)}
+                placeholder="Contoh: AZ001"
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: 'none', fontSize: 12, fontWeight: 700, color: '#111827', marginBottom: 12, outline: 'none' }}
               />
-              <button style={{ width: '100%', padding: '10px', background: '#93c5fd', color: '#1e3a8a', border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>
+              <button onClick={konfirmasiBerkasDiterima} style={{ width: '100%', padding: '10px', background: '#93c5fd', color: '#1e3a8a', border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>
                 Konfirmasi Berkas Diterima
               </button>
             </div>
@@ -173,10 +243,9 @@ export function DashboardDinas() {
             <div style={{ fontSize: 13, fontWeight: 800, color: '#0f1f3d', marginBottom: 4 }}>Ringkasan Hari Ini</div>
             <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 16 }}>Performa proses layanan Dinas.</div>
             {[
-              ['Total Berkas Aktif', '34'],
-              ['SLA Tepat Waktu', '88%'],
-              ['Rata-rata Proses', '2 Jam 15 Menit'],
-              ['Penalti Saya', '2 Poin'],
+              ['Total Berkas', stats?.total_berkas ?? 0],
+              ['Sedang Diproses', stats?.sedang_diproses ?? 0],
+              ['Selesai', stats?.selesai ?? 0],
             ].map(([label, val], i, arr) => (
               <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '13px 0', borderBottom: i < arr.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
                 <span style={{ fontSize: 11, color: '#6b7280' }}>{label}</span>
@@ -184,7 +253,6 @@ export function DashboardDinas() {
               </div>
             ))}
           </div>
-
         </div>
       </div>
     </div>
