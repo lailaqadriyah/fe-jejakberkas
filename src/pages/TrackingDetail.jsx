@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import Swal from "sweetalert2";
 import { Check } from "lucide-react";
 
 function StatusBadge({ status }) {
@@ -72,7 +73,7 @@ export function TrackingDetail() {
       ];
       const currentIdx = order.indexOf(data.posisi_berkas);
       if (currentIdx === -1 || currentIdx >= order.length - 1) {
-        alert("Berkas sudah di tahap akhir.");
+        Swal.fire({ icon: "warning", title: "Tahap Akhir", text: "Berkas sudah di tahap akhir.", confirmButtonColor: "#112340" });
         return;
       }
       const nextPos = order[currentIdx + 1];
@@ -93,13 +94,12 @@ export function TrackingDetail() {
       });
       const json = await res.json();
       if (json.success) {
-        alert(`Berkas maju ke tahap ${nextPos}!`);
-        window.location.reload();
+        Swal.fire({ icon: "success", title: "Berhasil!", text: `Berkas maju ke tahap ${nextPos}!`, confirmButtonColor: "#112340" }).then(() => { window.location.reload(); });
       } else {
-        alert("Gagal: " + json.message);
+        Swal.fire({ icon: "error", title: "Gagal", text: json.message, confirmButtonColor: "#112340" });
       }
     } catch (err) {
-      alert("Gagal terhubung ke server.");
+      Swal.fire({ icon: "error", title: "Koneksi Gagal", text: "Tidak dapat terhubung ke server.", confirmButtonColor: "#112340" });
     } finally {
       setActionLoading(false);
     }

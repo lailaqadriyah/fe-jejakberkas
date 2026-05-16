@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 const API = 'http://localhost:3000/api';
 
@@ -34,7 +35,7 @@ export function DashboardDinas() {
 
   const konfirmasiBerkasDiterima = async () => {
     if (!inputNoReg.trim()) {
-      alert('Masukkan nomor registrasi!');
+      Swal.fire({ icon: "warning", title: "Input Kosong", text: "Masukkan nomor registrasi!", confirmButtonColor: "#112340" });
       return;
     }
     try {
@@ -50,14 +51,12 @@ export function DashboardDinas() {
       });
       const json = await res.json();
       if (json.success) {
-        alert(`Berkas ${inputNoReg.trim()} berhasil dikonfirmasi diterima di Dinas!`);
-        setInputNoReg('');
-        fetchData();
+        Swal.fire({ icon: "success", title: "Berhasil!", text: `Berkas ${inputNoReg.trim()} berhasil dikonfirmasi!`, confirmButtonColor: "#112340" }).then(() => { setInputNoReg(''); fetchData(); });
       } else {
-        alert('Gagal: ' + json.message);
+        Swal.fire({ icon: "error", title: "Gagal", text: json.message, confirmButtonColor: "#112340" }).then(() => setInputNoReg(''));
       }
     } catch (err) {
-      alert('Gagal terhubung ke server.');
+      Swal.fire({ icon: "error", title: "Koneksi Gagal", text: "Tidak dapat terhubung ke server.", confirmButtonColor: "#112340" });
     }
   };
 
@@ -73,7 +72,7 @@ export function DashboardDinas() {
       if (!berkas) return;
       const currentIdx = order.indexOf(berkas.posisi_berkas);
       if (currentIdx === -1 || currentIdx >= order.length - 1) {
-        alert('Berkas sudah di tahap akhir.');
+        Swal.fire({ icon: "warning", title: "Tahap Akhir", text: "Berkas sudah di tahap akhir.", confirmButtonColor: "#112340" });
         return;
       }
       const nextPos = order[currentIdx + 1];
@@ -91,13 +90,12 @@ export function DashboardDinas() {
       });
       const json = await res.json();
       if (json.success) {
-        alert(`Berkas ${noReg} maju ke tahap ${nextPos}!`);
-        fetchData();
+        Swal.fire({ icon: "success", title: "Berhasil!", text: `Berkas ${noReg} maju ke tahap ${nextPos}!`, confirmButtonColor: "#112340" }).then(() => fetchData());
       } else {
-        alert('Gagal: ' + json.message);
+        Swal.fire({ icon: "error", title: "Gagal", text: json.message, confirmButtonColor: "#112340" });
       }
     } catch (err) {
-      alert('Gagal terhubung ke server.');
+      Swal.fire({ icon: "error", title: "Koneksi Gagal", text: "Tidak dapat terhubung ke server.", confirmButtonColor: "#112340" });
     }
   };
 

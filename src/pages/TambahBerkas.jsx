@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 import {
   Check, FileText, LayoutGrid, BookOpen
 } from "lucide-react";
@@ -97,7 +98,7 @@ export function TambahBerkas() {
 
   const handleSubmit = async () => {
     if (!formData.nama_warga || !formData.nik_warga) {
-      alert("Nama dan NIK wajib diisi!");
+      Swal.fire({ icon: "warning", title: "Data Kurang", text: "Nama dan NIK wajib diisi!", confirmButtonColor: "#112340" });
       return;
     }
     
@@ -118,12 +119,12 @@ export function TambahBerkas() {
       const result = await response.json();
       if (result.success) {
         setNoRegResult(result.no_registrasi);
-        alert("Pendaftaran Berhasil! Nomor: " + result.no_registrasi);
+        Swal.fire({ icon: "success", title: "Pendaftaran Berhasil!", text: "Nomor: " + result.no_registrasi, confirmButtonColor: "#112340" });
       } else {
-        alert("Gagal: " + result.message);
+        Swal.fire({ icon: "error", title: "Gagal", text: result.message, confirmButtonColor: "#112340" });
       }
     } catch (error) {
-      alert("Koneksi Backend Gagal!");
+      Swal.fire({ icon: "error", title: "Koneksi Gagal", text: "Tidak dapat terhubung ke server backend.", confirmButtonColor: "#112340" });
     } finally {
       setIsLoading(false);
     }
