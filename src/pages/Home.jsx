@@ -84,9 +84,11 @@ export function Home() {
       'VERIFIKASI_BERKAS_DINAS': { label: 'Verifikasi Berkas Dinas', cls: 'bg-blue-50 text-blue-600 border-blue-200' },
       'VERIFIKASI_SIAK': { label: 'Verifikasi Database', cls: 'bg-blue-50 text-blue-600 border-blue-200' },
       'PROSES_CETAK': { label: 'Proses Cetak', cls: 'bg-blue-50 text-blue-600 border-blue-200' },
-      'VALIDASI_PEJABAT': { label: 'Approval Kepala Dinas', cls: 'bg-purple-50 text-purple-600 border-purple-200' },
+      // VALIDASI_PEJABAT removed from flow
       'DOKUMEN_SELESAI': { label: 'Dokumen Selesai', cls: 'bg-green-50 text-green-600 border-green-200' },
+      'DOKUMEN_DIKIRIM_KE_KECAMATAN': { label: 'Dikirim ke Kecamatan', cls: 'bg-blue-50 text-blue-600 border-blue-200' },
       'SIAP_DIAMBIL_DI_KECAMATAN': { label: 'Siap Diambil', cls: 'bg-green-50 text-green-600 border-green-200' },
+      'SELESAI': { label: 'Telah Diambil', cls: 'bg-green-100 text-green-700 border-green-300' },
     };
     const m = map[posisi] || { label: posisi?.replace(/_/g, ' '), cls: 'bg-gray-50 text-gray-600 border-gray-200' };
     return m;
@@ -275,7 +277,7 @@ export function Home() {
                       <td className="px-6 py-4 text-center">
                         <div className="flex items-center justify-center space-x-2">
                           <button
-                            onClick={() => navigate(`/tracking/${item.no_registrasi}`)}
+                            onClick={() => navigate(`/tracking/${item.no_registrasi}?from=kecamatan`)}
                             className="border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                           >
                             Lihat Detail

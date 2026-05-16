@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 import { Check } from "lucide-react";
 
@@ -119,8 +119,8 @@ export function TrackingDetail() {
       });
       const json = await res.json();
       if (json.success) {
-        Swal.fire({ icon: "success", title: "Berhasil!", text: `Berkas maju ke tahap ${nextPos.replace(/_/g, " ")}!`, confirmButtonColor: "#112340" })
-          .then(() => { window.location.reload(); });
+        if (json.data) setData(json.data);
+        Swal.fire({ icon: "success", title: "Berhasil!", text: `Berkas maju ke tahap ${nextPos.replace(/_/g, " ")}!`, confirmButtonColor: "#112340" });
       } else {
         Swal.fire({ icon: "error", title: "Gagal", text: json.message, confirmButtonColor: "#112340" });
       }
@@ -143,18 +143,50 @@ export function TrackingDetail() {
     "VERIFIKASI_BERKAS_DINAS",
     "VERIFIKASI_SIAK",
     "PROSES_CETAK",
-    "VALIDASI_PEJABAT",
     "DOKUMEN_SELESAI",
     "SIAP_DIAMBIL_DI_KECAMATAN",
+    "SELESAI",
   ];
 
-  // Jika dokumen memiliki urutan dinas khusus, gunakan itu untuk timeline saat tahapan = DINAS
-  const displayedOrder = data.tahapan_sekarang === 'DINAS' && Array.isArray(data.dinas_sequence) && data.dinas_sequence.length > 0
-    ? data.dinas_sequence
-    : fullOrder;
+  // Build displayedOrder: always include kecamatan steps first, then KONFIRMASI_WARGA_KE_DINAS,
+  // then use dinas_sequence (if provided) or default dinas steps, then SIAP_DIAMBIL_DI_KECAMATAN and SELESAI
+  const defaultDinas = ['VERIFIKASI_BERKAS_DINAS', 'VERIFIKASI_SIAK', 'PROSES_CETAK', 'DOKUMEN_SELESAI'];
+  const dinasSection = Array.isArray(data.dinas_sequence) && data.dinas_sequence.length > 0 ? data.dinas_sequence : defaultDinas;
+  const displayedOrder = [
+    "VERIFIKASI_BERKAS_KECAMATAN",
+    "PEMBUATAN_SURAT_PENGANTAR",
+    "MENUNGGU_TTD_CAMAT",
+    "SELESAI_KECAMATAN",
+    "KONFIRMASI_WARGA_KE_DINAS",
+    ...dinasSection,
+    "DOKUMEN_DIKIRIM_KE_KECAMATAN",
+    "SIAP_DIAMBIL_DI_KECAMATAN",
+    "SELESAI",
+  ];
 
-  const currentIndex = displayedOrder.indexOf(data.posisi_berkas);
-  const getStepStatus = (idx) => idx < currentIndex ? "completed" : idx === currentIndex ? "inprogress" : "notstarted";
+  let actualPosisi = data.posisi_berkas;
+  if (actualPosisi === 'SELESAI_DIAMBIL') actualPosisi = 'SELESAI';
+  const currentIndex = displayedOrder.indexOf(actualPosisi);
+  const isSelesai = actualPosisi === 'SELESAI';
+  
+  const getStepStatus = (idx) => {
+    if (isSelesai) return "completed";
+    if (currentIndex === -1) return "notstarted";
+    return idx < currentIndex ? "completed" : idx === currentIndex ? "inprogress" : "notstarted";
+  };
+
+  // Determine whether to show Dinas action panel based on caller (query) or user role
+  const location = useLocation();
+  const fromParam = new URLSearchParams(location.search).get('from');
+  const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const myRole = (savedUser.role || '').toString().toLowerCase();
+  const dinasStartIdx = displayedOrder.indexOf("KONFIRMASI_WARGA_KE_DINAS");
+  const isFaseDinas = currentIndex >= dinasStartIdx;
+  // Priority: explicit caller route wins. If route is tracking-dinas -> show dinas panel.
+  let showDinasPanel = false;
+  if (location.pathname.includes('/tracking-dinas') || fromParam === 'dinas') showDinasPanel = true;
+  else if (fromParam === 'kecamatan') showDinasPanel = false;
+  else showDinasPanel = (myRole.includes('dinas')) || data.tahapan_sekarang === 'DINAS';
 
   const humanTitle = (pos) => {
     const map = {
@@ -182,15 +214,19 @@ export function TrackingDetail() {
       'REKAM_DATABASE_KEPENDUDUKAN': 'Rekam Database Kependudukan',
       'TANDA_TANGAN_KADIS': 'Tanda Tangan Kadis',
       'PEMBETULAN_INPUTAN_DATA': 'Pembetulan Inputan Data',
+      'DOKUMEN_DIKIRIM_KE_KECAMATAN': 'Dokumen Dikirim ke Kecamatan',
+      'SIAP_DIAMBIL_DI_KECAMATAN': 'Siap Diambil di Kecamatan',
+      'SELESAI': 'Dokumen Telah Diambil',
     };
     return map[pos] || pos.replace(/_/g, ' ');
   };
 
   // Kecamatan hanya bisa Next Step di step 0–2 (index 0,1,2 → ke SELESAI_KECAMATAN)
   const isKecamatanSelesai = currentIndex >= 3; // SELESAI_KECAMATAN dst
-  const isFaseDinas = currentIndex >= 5;        // VERIFIKASI_BERKAS_DINAS dst
   const isLayerInteredat = data.posisi_berkas === "KONFIRMASI_WARGA_KE_DINAS";
   const canNextStep = currentIndex >= 0 && currentIndex < 3; // hanya 3 langkah pertama
+
+  const isKecamatanReceiving = data.posisi_berkas === "DOKUMEN_DIKIRIM_KE_KECAMATAN";
 
   const timelineSteps = displayedOrder.map((pos, i) => ({
     num: i + 1,
@@ -283,12 +319,12 @@ export function TrackingDetail() {
 
           {/* Action Card: show Kecamatan actions or Dinas actions depending on tahapan */}
           <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", padding: "22px 24px" }}>
-            {data.tahapan_sekarang !== 'DINAS' ? (
+            {!showDinasPanel ? (
               <>
                 <h3 style={{ fontSize: 13, fontWeight: 700, color: "#112340", margin: "0 0 4px" }}>Aksi Staff Kecamatan</h3>
                 <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 16px" }}>Gunakan tombol aksi sesuai kondisi proses berkas saat ini.</p>
 
-                {isKecamatanSelesai && !isFaseDinas && (
+                {isKecamatanSelesai && !showDinasPanel && (
                   <div style={{ background: "#fefce8", border: "1px solid #fde047", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
                     <p style={{ fontSize: 12, fontWeight: 700, color: "#854d0e", margin: "0 0 4px" }}>
                       {isLayerInteredat ? "Menunggu Warga Membawa Berkas ke Dinas" : "Proses Kecamatan Selesai"}
@@ -296,7 +332,9 @@ export function TrackingDetail() {
                     <p style={{ fontSize: 11, color: "#a16207", margin: 0 }}>
                       {isLayerInteredat
                         ? "Warga perlu membawa berkas dan surat pengantar ke Dinas. Admin Dinas akan mengkonfirmasi penerimaan."
-                        : "Berkas telah selesai diproses di Kecamatan. Warga akan membawa berkas ke Dinas untuk diproses lebih lanjut."}
+                        : data.posisi_berkas === "SELESAI_KECAMATAN" 
+                          ? "Menunggu warga menekan tombol 'Lanjut ke Dinas' di aplikasi mobile untuk melanjutkan proses."
+                          : "Berkas telah selesai diproses di Kecamatan. Warga akan membawa berkas ke Dinas untuk diproses lebih lanjut."}
                     </p>
                   </div>
                 )}
@@ -306,9 +344,34 @@ export function TrackingDetail() {
                     <button onClick={handleNextStep} disabled={actionLoading} style={{ padding: "9px 22px", background: actionLoading ? "#9ca3af" : "#2563eb", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: actionLoading ? "default" : "pointer" }}>
                       {actionLoading ? "Memproses..." : "Next Step"}
                     </button>
+                  ) : isKecamatanReceiving ? (
+                    <button onClick={async () => {
+                      setActionLoading(true);
+                      try {
+                        const res = await fetch(`http://localhost:3000/api/update-status/${data.no_registrasi}`, {
+                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ posisi_berkas_baru: 'SIAP_DIAMBIL_DI_KECAMATAN', penanggung_jawab_baru_id: 'STAFF_KECAMATAN', tahapan_baru: 'KECAMATAN', keterangan_log: 'Dokumen telah diterima di Kecamatan dan siap diambil warga.' })
+                        });
+                        const j = await res.json();
+                        if (j.success && j.data) setData(j.data);
+                        Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Dokumen ditandai Siap Diambil.', confirmButtonColor: '#112340' });
+                      } catch (e) {
+                        console.error(e);
+                      } finally { setActionLoading(false); }
+                    }} disabled={actionLoading} style={{ padding: "9px 22px", background: actionLoading ? "#9ca3af" : "#2563eb", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: actionLoading ? "default" : "pointer" }}>
+                      Konfirmasi Terima (Siap Diambil)
+                    </button>
                   ) : (
                     <button disabled style={{ padding: "9px 22px", background: "#f3f4f6", color: "#9ca3af", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "not-allowed" }}>
-                      {isFaseDinas ? "Diproses Staff Dinas" : "Menunggu Proses Dinas"}
+                      {showDinasPanel 
+                        ? "Diproses Staff Dinas" 
+                        : data.posisi_berkas === 'SELESAI' 
+                          ? "Selesai" 
+                          : data.posisi_berkas === 'SELESAI_KECAMATAN' 
+                            ? "Menunggu Konfirmasi Warga (Mobile)" 
+                            : data.posisi_berkas === 'SIAP_DIAMBIL_DI_KECAMATAN'
+                              ? "Menunggu Konfirmasi Pengambilan (Mobile)"
+                              : "Menunggu Proses Dinas"}
                     </button>
                   )}
                   <button style={{ padding: "9px 22px", background: "#fff", color: "#2563eb", border: "1px solid #93c5fd", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Tambah Catatan</button>
@@ -320,40 +383,67 @@ export function TrackingDetail() {
                 <h3 style={{ fontSize: 13, fontWeight: 700, color: "#112340", margin: "0 0 4px" }}>Aksi Staff Dinas</h3>
                 <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 16px" }}>Gunakan tombol aksi untuk memproses berkas sesuai alur dinas.</p>
 
-                {isFaseDinas && (
-                  <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
-                    <p style={{ fontSize: 12, fontWeight: 700, color: "#1e40af", margin: "0 0 4px" }}>Berkas Sedang Diproses Dinas</p>
-                    <p style={{ fontSize: 11, color: "#1d4ed8", margin: 0 }}>Lakukan konfirmasi penerimaan atau lanjutkan ke langkah berikutnya.</p>
-                  </div>
-                )}
+                <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: "#1e40af", margin: "0 0 4px" }}>Berkas Sedang Diproses Dinas</p>
+                  <p style={{ fontSize: 11, color: "#1d4ed8", margin: 0 }}>Lakukan konfirmasi penerimaan atau lanjutkan ke langkah berikutnya.</p>
+                </div>
 
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <button onClick={async () => {
-                    setActionLoading(true);
-                    try {
-                      const res = await fetch(`http://localhost:3000/api/update-status/${data.no_registrasi}`, {
-                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ posisi_berkas_baru: 'VERIFIKASI_BERKAS_DINAS', penanggung_jawab_baru_id: 'STAFF_DINAS', tahapan_baru: 'DINAS', keterangan_log: 'Konfirmasi penerimaan oleh Dinas dari UI Tracking' })
-                      });
-                      const j = await res.json();
-                      if (j.success && j.data) setData(j.data);
-                    } catch (e) {
-                      console.error(e);
-                    } finally { setActionLoading(false); }
-                  }} disabled={actionLoading} style={{ padding: '9px 22px', background: actionLoading ? '#9ca3af' : '#16a34a', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: actionLoading ? 'default' : 'pointer' }}>
-                    {actionLoading ? 'Memproses...' : 'Konfirmasi Terima'}
-                  </button>
-                  <button onClick={async () => {
-                    setActionLoading(true);
-                    try {
-                      const dinasOrder = data.dinas_sequence && data.dinas_sequence.length > 0 ? data.dinas_sequence : ['VERIFIKASI_BERKAS_DINAS','VERIFIKASI_SIAK','PROSES_CETAK','VALIDASI_PEJABAT','DOKUMEN_SELESAI'];
-                      const curIdx = dinasOrder.indexOf(data.posisi_berkas);
-                      if (curIdx === -1 || curIdx >= dinasOrder.length - 1) { setActionLoading(false); return; }
-                      const next = dinasOrder[curIdx + 1];
-                      const res = await fetch(`http://localhost:3000/api/update-status/${data.no_registrasi}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ posisi_berkas_baru: next, penanggung_jawab_baru_id: 'STAFF_DINAS', tahapan_baru: 'DINAS', keterangan_log: `Berkas lanjut ke tahap: ${next}` }) });
-                      const j = await res.json(); if (j.success && j.data) setData(j.data);
-                    } catch (e) { console.error(e); } finally { setActionLoading(false); }
-                  }} style={{ padding: '9px 22px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Next Step</button>
+                  {data.posisi_berkas === 'KONFIRMASI_WARGA_KE_DINAS' && (
+                    <button onClick={async () => {
+                      setActionLoading(true);
+                      try {
+                        const res = await fetch(`http://localhost:3000/api/update-status/${data.no_registrasi}`, {
+                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ posisi_berkas_baru: 'VERIFIKASI_BERKAS_DINAS', penanggung_jawab_baru_id: 'STAFF_DINAS', tahapan_baru: 'DINAS', keterangan_log: 'Konfirmasi penerimaan oleh Dinas dari UI Tracking' })
+                        });
+                        const j = await res.json();
+                        if (j.success && j.data) setData(j.data);
+                        Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Berkas berhasil dikonfirmasi dan masuk tahap Dinas.', confirmButtonColor: '#112340' });
+                      } catch (e) {
+                        console.error(e);
+                        Swal.fire({ icon: 'error', title: 'Gagal', text: 'Koneksi ke server bermasalah.', confirmButtonColor: '#112340' });
+                      } finally { setActionLoading(false); }
+                    }} disabled={actionLoading} style={{ padding: '9px 22px', background: actionLoading ? '#9ca3af' : '#16a34a', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: actionLoading ? 'default' : 'pointer' }}>
+                      {actionLoading ? 'Memproses...' : 'Konfirmasi Terima'}
+                    </button>
+                  )}
+
+                  {currentIndex < 4 && (
+                    <button disabled style={{ padding: "9px 22px", background: "#f3f4f6", color: "#9ca3af", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "not-allowed" }}>
+                      Masih di tahap Kecamatan
+                    </button>
+                  )}
+
+                  {currentIndex > 4 && data.posisi_berkas !== 'DOKUMEN_DIKIRIM_KE_KECAMATAN' && data.posisi_berkas !== 'SELESAI' && data.posisi_berkas !== 'SIAP_DIAMBIL_DI_KECAMATAN' && data.posisi_berkas !== 'DOKUMEN_SELESAI' && (
+                    <button onClick={async () => {
+                      setActionLoading(true);
+                      try {
+                        const dinasOrder = data.dinas_sequence && data.dinas_sequence.length > 0 ? data.dinas_sequence : ['VERIFIKASI_BERKAS_DINAS','VERIFIKASI_SIAK','PROSES_CETAK','DOKUMEN_SELESAI','DOKUMEN_DIKIRIM_KE_KECAMATAN','SIAP_DIAMBIL_DI_KECAMATAN','SELESAI'];
+                        const curIdx = dinasOrder.indexOf(data.posisi_berkas);
+                        if (curIdx === -1 || curIdx >= dinasOrder.length - 1) { 
+                          Swal.fire({ icon: 'info', title: 'Tahap Akhir', text: 'Berkas sudah di tahap akhir.', confirmButtonColor: '#112340' });
+                          setActionLoading(false); return; 
+                        }
+                        const next = dinasOrder[curIdx + 1];
+                        const res = await fetch(`http://localhost:3000/api/update-status/${data.no_registrasi}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ posisi_berkas_baru: next, penanggung_jawab_baru_id: 'STAFF_DINAS', tahapan_baru: 'DINAS', keterangan_log: `Berkas lanjut ke tahap: ${next}` }) });
+                        const j = await res.json(); 
+                        if (j.success && j.data) setData(j.data);
+                        Swal.fire({ icon: 'success', title: 'Berhasil!', text: `Berkas maju ke tahap ${next.replace(/_/g, ' ')}!`, confirmButtonColor: '#112340' });
+                      } catch (e) { 
+                        console.error(e); 
+                        Swal.fire({ icon: 'error', title: 'Gagal', text: 'Koneksi ke server bermasalah.', confirmButtonColor: '#112340' });
+                      } finally { setActionLoading(false); }
+                    }} disabled={actionLoading} style={{ padding: '9px 22px', background: actionLoading ? '#9ca3af' : '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: actionLoading ? 'default' : 'pointer' }}>
+                      {actionLoading ? 'Memproses...' : 'Next Step'}
+                    </button>
+                  )}
+
+                  {data.posisi_berkas === 'SIAP_DIAMBIL_DI_KECAMATAN' && (
+                    <button disabled style={{ padding: "9px 22px", background: "#f3f4f6", color: "#9ca3af", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "not-allowed" }}>
+                      Menunggu Konfirmasi Pengambilan (Mobile)
+                    </button>
+                  )}
                   <button style={{ padding: '9px 22px', background: '#fff', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Tandai Bermasalah</button>
                 </div>
               </>

@@ -188,7 +188,7 @@ export function DashboardCamat() {
                         <td style={{ padding: '13px 18px' }}>
                           <div style={{ display: 'flex', gap: 6 }}>
                             <button onClick={() => konfirmasiTTD(row.no_registrasi)} style={{ padding: '5px 10px', background: '#1a4fca', color: '#fff', border: 'none', borderRadius: 6, fontSize: 10, fontWeight: 800, cursor: 'pointer' }}>Konfirmasi</button>
-                            <button onClick={() => navigate(`/tracking/${row.no_registrasi}`)} style={{ padding: '5px 10px', background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 10, fontWeight: 800, cursor: 'pointer' }}>Detail</button>
+                            <button onClick={() => navigate(`/tracking/${row.no_registrasi}?from=kecamatan`)} style={{ padding: '5px 10px', background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 10, fontWeight: 800, cursor: 'pointer' }}>Detail</button>
                           </div>
                         </td>
                       </tr>

@@ -21,6 +21,7 @@ export function AppRouter() {
         <Route path="/home" element={<Home />} />
         <Route path="/tambah-berkas" element={<TambahBerkas />} />
         <Route path="/tracking/:id" element={<TrackingDetail />} />
+        <Route path="/tracking-dinas/:id" element={<TrackingDetail />} />
         <Route path="/camat" element={<DashboardCamat />} />
         <Route path="/dinas" element={<DashboardDinas />} />
         <Route path="/kepala-dinas" element={<DashboardKepalaDinas />} />

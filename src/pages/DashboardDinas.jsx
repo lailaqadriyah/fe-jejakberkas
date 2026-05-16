@@ -8,9 +8,10 @@ const DINAS_ORDER = [
   'VERIFIKASI_BERKAS_DINAS',
   'VERIFIKASI_SIAK',
   'PROSES_CETAK',
-  'VALIDASI_PEJABAT',
   'DOKUMEN_SELESAI',
+  'DOKUMEN_DIKIRIM_KE_KECAMATAN',
   'SIAP_DIAMBIL_DI_KECAMATAN',
+  'SELESAI',
 ];
 
 const ALUR_STEPS = [
@@ -18,8 +19,9 @@ const ALUR_STEPS = [
   { key: 'VERIFIKASI_BERKAS_DINAS', label: 'Verifikasi Database', desc: 'Pengecekan data berkas sesuai dengan data yang ada.' },
   { key: 'VERIFIKASI_SIAK', label: 'Input Data', desc: 'Petugas memasukan data berkas ke dalam Sistem Dinas.' },
   { key: 'PROSES_CETAK', label: 'Proses Cetak', desc: 'Berkas dicetak oleh petugas Dinas setelah dinyatakan valid.' },
-  { key: 'VALIDASI_PEJABAT', label: 'Menunggu Approval Kepala Dinas', desc: 'Dokumen menunggu tanda tangan kepala Dinas.' },
-  { key: 'DOKUMEN_SELESAI', label: 'Selesai', desc: 'Dokumen selesai dan siap dikirim balik ke Kecamatan.' },
+  { key: 'DOKUMEN_SELESAI', label: 'DOKUMEN SELESAI', desc: 'Dokumen selesai dan siap dikirim balik ke Kecamatan.' },
+  { key: 'SIAP_DIAMBIL_DI_KECAMATAN', label: 'Siap Diambil di Kecamatan', desc: 'Dokumen telah dikirim balik ke Kecamatan dan menunggu pengambilan.' },
+  { key: 'SELESAI', label: 'Selesai', desc: 'Proses berkas selesai.' },
 ];
 
 export function DashboardDinas() {
@@ -133,7 +135,7 @@ export function DashboardDinas() {
       'VERIFIKASI_BERKAS_DINAS': { label: 'Verifikasi Database', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
       'VERIFIKASI_SIAK': { label: 'Verifikasi SIAK', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
       'PROSES_CETAK': { label: 'Proses Cetak', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
-      'VALIDASI_PEJABAT': { label: 'Menunggu Approval', color: '#f97316', bg: '#fff7ed', border: '#fed7aa' },
+      // VALIDASI_PEJABAT removed from flow; treat DOKUMEN_SELESAI as waiting finalization
       'DOKUMEN_SELESAI': { label: 'Dokumen Selesai', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
       'SIAP_DIAMBIL_DI_KECAMATAN': { label: 'Lewat 2Jam', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
     };
@@ -183,21 +185,12 @@ export function DashboardDinas() {
     <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontSize: 13, background: '#f5f6fa', minHeight: '100vh' }}>
 
       {/* ───── TOP BANNER ───── */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: '#0f1f3d' }}>Dashboard Staff Dinas</div>
           <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>Staf Dinas &nbsp;/&nbsp; Staf Berkas</div>
         </div>
-        <button
-          onClick={() => {
-            const firstMenunggu = berkasMenunggu[0];
-            if (firstMenunggu) konfirmasiTerimaFromList(firstMenunggu.no_registrasi);
-            else Swal.fire({ icon: 'info', title: 'Tidak Ada Berkas', text: 'Tidak ada berkas yang menunggu konfirmasi saat ini.', confirmButtonColor: '#112340' });
-          }}
-          style={{ padding: '8px 18px', background: '#1a4fca', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-        >
-          Konfirmasi Berkas Diterima
-        </button>
+        {/* Konfirmasi moved to TrackingDetail: removed top button to avoid duplicate entry point */}
       </div>
 
       <div style={{ padding: '20px 28px' }}>
@@ -218,7 +211,7 @@ export function DashboardDinas() {
           {[
             { label: 'Berkas Masuk', value: berkasMenunggu.length, sub: 'Diterima hari ini', icon: '📥', iconBg: '#eff6ff', border: '#bfdbfe' },
             { label: 'Sedang Diproses', value: stats?.sedang_diproses ?? 0, sub: 'Dalam proses Dinas', icon: '⚙️', iconBg: '#f0fdf4', border: '#bbf7d0' },
-            { label: 'Menunggu Approval', value: berkasDinas.filter(b => b.posisi_berkas === 'VALIDASI_PEJABAT').length, sub: 'Kepala Dinas', icon: '✍️', iconBg: '#fff7ed', border: '#fed7aa' },
+            { label: 'Menunggu Finalisasi', value: berkasDinas.filter(b => b.posisi_berkas === 'DOKUMEN_SELESAI').length, sub: 'Menunggu finalisasi/pengiriman', icon: '✍️', iconBg: '#fff7ed', border: '#fed7aa' },
             { label: 'Terlambat', value: terlambat, sub: 'Perlu penanganan', icon: '⚠️', iconBg: '#fef2f2', border: '#fecaca' },
           ].map((m, i) => (
             <div key={i} style={{ background: '#fff', borderRadius: 12, padding: '16px 18px', border: `1.5px solid ${m.border}`, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
@@ -281,7 +274,7 @@ export function DashboardDinas() {
                               Next Step
                             </button>
                           )}
-                          <button onClick={() => navigate(`/tracking/${row.no_registrasi}`)} style={{ padding: '5px 10px', background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>
+                          <button onClick={() => navigate(`/tracking-dinas/${row.no_registrasi}`)} style={{ padding: '5px 10px', background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>
                             Detail
                           </button>
                         </div>
@@ -413,9 +406,9 @@ export function DashboardDinas() {
                         <div style={{ fontSize: 11, fontWeight: 700, color: '#2563eb' }}>{row.no_registrasi}</div>
                         <div style={{ fontSize: 10, color: '#6b7280' }}>{row.nama_warga} · {row.layanan === 1 ? 'KTP' : row.layanan === 2 ? 'KK' : 'Akta'}</div>
                       </div>
-                      <div style={{ display: 'flex', gap: 5 }}>
-                        <button onClick={() => konfirmasiTerimaFromList(row.no_registrasi)} style={{ padding: '4px 9px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 5, fontSize: 9, fontWeight: 800, cursor: 'pointer' }}>Terima</button>
-                        <button onClick={() => navigate(`/tracking/${row.no_registrasi}`)} style={{ padding: '4px 8px', background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 5, fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>Detail</button>
+                        <div style={{ display: 'flex', gap: 5 }}>
+                        {/* Terima moved to TrackingDetail, keep only Detail here */}
+                        <button onClick={() => navigate(`/tracking-dinas/${row.no_registrasi}`)} style={{ padding: '4px 8px', background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 5, fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>Detail</button>
                       </div>
                     </div>
                   ))}

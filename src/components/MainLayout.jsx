@@ -41,7 +41,7 @@ export function MainLayout() {
   }, [user, location.pathname, navigate]);
 
   const isCamat = location.pathname.startsWith('/camat');
-  const isDinas = location.pathname.startsWith('/dinas');
+  const isDinas = location.pathname.startsWith('/dinas') || location.pathname.startsWith('/tracking-dinas');
   const isKepalaDinas = location.pathname.startsWith('/kepala-dinas');
   const isBiroOrganisasi = location.pathname.startsWith('/biro-organisasi');
   const displayProfile = {

@@ -54,7 +54,7 @@ export function DashboardKepalaDinas() {
       'VERIFIKASI_SIAK': ['Verifikasi Database', '#2563eb', '#eff6ff', '#bfdbfe'],
       'ANTREAN_LOKET_DINAS': ['Antrean Loket', '#f97316', '#fff7ed', '#fed7aa'],
       'PROSES_CETAK': ['Proses Cetak', '#16a34a', '#f0fdf4', '#bbf7d0'],
-      'VALIDASI_PEJABAT': ['Menunggu Finalisasi', '#f97316', '#fff7ed', '#fed7aa'],
+      // VALIDASI_PEJABAT removed from flow
       'DOKUMEN_SELESAI': ['Dokumen Selesai', '#16a34a', '#f0fdf4', '#bbf7d0'],
       'SIAP_DIAMBIL_DI_KECAMATAN': ['Siap Diambil', '#16a34a', '#f0fdf4', '#bbf7d0'],
     };
@@ -139,7 +139,7 @@ export function DashboardKepalaDinas() {
                           <td style={{ padding: '13px 18px', fontSize: 11, fontWeight: 700, color: '#2563eb' }}>{row.estimasi_ml_kecamatan?.range || '-'}</td>
                           <td style={{ padding: '13px 18px', fontSize: 11, color: '#111827' }}>{row.estimasi_ml_kecamatan?.predicted_minutes ? `${row.estimasi_ml_kecamatan.predicted_minutes}m` : '-'}</td>
                           <td style={{ padding: '13px 18px' }}>
-                            <button onClick={() => navigate(`/tracking/${row.no_registrasi}`)} style={{ padding: '5px 10px', background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 10, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>Lihat Detail</button>
+                            <button onClick={() => navigate(`/tracking/${row.no_registrasi}?from=dinas`)} style={{ padding: '5px 10px', background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 10, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>Lihat Detail</button>
                           </td>
                         </tr>
                       );
