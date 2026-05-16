@@ -17,6 +17,8 @@ function UserAvatarIcon() {
 
 export function MainLayout() {
   const location = useLocation();
+  const isCamat = location.pathname.startsWith('/camat');
+  const isDinas = location.pathname.startsWith('/dinas');
   
   return (
     <div className="flex h-screen bg-[#f4f7fb] font-sans text-gray-800">
@@ -36,30 +38,84 @@ export function MainLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 space-y-1.5 z-10 overflow-y-auto mt-4">
-          <Link to="/home" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/home' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
-            <LayoutDashboard className="w-4 h-4 mr-3" />
-            Dashboard
-          </Link>
-          <Link to="/tambah-berkas" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/tambah-berkas' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
-            <FilePlus className="w-4 h-4 mr-3" />
-            Tambah Berkas
-          </Link>
-          <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-            <FileText className="w-4 h-4 mr-3" />
-            Daftar Berkas
-          </a>
-          <Link to="/tracking/JB-2025-00128" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname.startsWith('/tracking') ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
-            <MapPin className="w-4 h-4 mr-3" />
-            Tracking Berkas
-          </Link>
-          <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-            <History className="w-4 h-4 mr-3" />
-            Riwayat
-          </a>
-          <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
-            <AlertCircle className="w-4 h-4 mr-3" />
-            Penalti Saya
-          </a>
+          {isCamat ? (
+            <>
+              <Link to="/camat" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/camat' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                <LayoutDashboard className="w-4 h-4 mr-3" />
+                Dashboard
+              </Link>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
+                <FilePlus className="w-4 h-4 mr-3" />
+                Menunggu TTD
+              </a>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
+                <FileText className="w-4 h-4 mr-3" />
+                Monitoring Staff
+              </a>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
+                <AlertCircle className="w-4 h-4 mr-3" />
+                Penalti Staff
+              </a>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
+                <History className="w-4 h-4 mr-3" />
+                Statistik Kecamatan
+              </a>
+            </>
+          ) : isDinas ? (
+            <>
+              <Link to="/dinas" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/dinas' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                <LayoutDashboard className="w-4 h-4 mr-3" />
+                Dashboard
+              </Link>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
+                <FilePlus className="w-4 h-4 mr-3" />
+                Berkas Masuk
+              </a>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
+                <FileText className="w-4 h-4 mr-3" />
+                Proses Berkas
+              </a>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
+                <MapPin className="w-4 h-4 mr-3" />
+                Tracking
+              </a>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
+                <History className="w-4 h-4 mr-3" />
+                Riwayat
+              </a>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
+                <AlertCircle className="w-4 h-4 mr-3" />
+                ! Penalti Saya
+              </a>
+            </>
+          ) : (
+            <>
+              <Link to="/home" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/home' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                <LayoutDashboard className="w-4 h-4 mr-3" />
+                Dashboard
+              </Link>
+              <Link to="/tambah-berkas" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/tambah-berkas' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                <FilePlus className="w-4 h-4 mr-3" />
+                Tambah Berkas
+              </Link>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
+                <FileText className="w-4 h-4 mr-3" />
+                Daftar Berkas
+              </a>
+              <Link to="/tracking/JB-2025-00128" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname.startsWith('/tracking') ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                <MapPin className="w-4 h-4 mr-3" />
+                Tracking Berkas
+              </Link>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
+                <History className="w-4 h-4 mr-3" />
+                Riwayat
+              </a>
+              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
+                <AlertCircle className="w-4 h-4 mr-3" />
+                Penalti Saya
+              </a>
+            </>
+          )}
         </nav>
 
         {/* User Profile Card */}
@@ -69,11 +125,11 @@ export function MainLayout() {
               <UserAvatarIcon />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">Siti Nurhaliza</p>
-              <p className="text-[11px] text-gray-400 truncate mb-1">Staff Kecamatan</p>
+              <p className="text-sm font-semibold text-white truncate">{isCamat ? 'Drs. Ahmad Fauzi' : isDinas ? 'Rina Pramesti' : 'Siti Nurhaliza'}</p>
+              <p className="text-[11px] text-gray-400 truncate mb-1">{isCamat ? 'Camat Kuranji' : isDinas ? 'Staff Dinas Dukcapil' : 'Staff Kecamatan'}</p>
               <div className="flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-1.5 shadow-[0_0_5px_rgba(34,197,94,0.6)]"></div>
-                <span className="text-[10px] text-green-400">Online</span>
+                <span className="text-[10px] text-green-400">Available</span>
               </div>
             </div>
           </div>
@@ -113,6 +169,26 @@ export function MainLayout() {
                     <span>Dashboard</span>
                     <ChevronRight className="w-3 h-3 mx-1" />
                     <span>Staff Kecamatan</span>
+                  </div>
+                </div>
+              )}
+              {location.pathname === '/camat' && (
+                <div>
+                  <h2 className="text-2xl font-bold text-[#112340]">Dashboard Camat</h2>
+                  <div className="flex items-center text-xs text-gray-500 mt-1 font-medium">
+                    <span>Dashboard</span>
+                    <ChevronRight className="w-3 h-3 mx-1" />
+                    <span>Camat</span>
+                  </div>
+                </div>
+              )}
+              {location.pathname === '/dinas' && (
+                <div>
+                  <h2 className="text-2xl font-bold text-[#112340]">Dashboard Staff Dinas</h2>
+                  <div className="flex items-center text-xs text-gray-500 mt-1 font-medium">
+                    <span>Dashboard</span>
+                    <ChevronRight className="w-3 h-3 mx-1" />
+                    <span>Staff Dinas</span>
                   </div>
                 </div>
               )}
@@ -160,11 +236,11 @@ export function MainLayout() {
             
             <div className="flex items-center p-1.5 pr-4 border border-gray-200 rounded-full cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
               <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mr-3 font-semibold text-sm">
-                SN
+                {isCamat ? 'AF' : isDinas ? 'RP' : 'SN'}
               </div>
               <div>
-                <p className="text-sm font-bold text-gray-800 leading-tight">Siti Nurhaliza</p>
-                <p className="text-[10px] text-gray-500 font-medium">Staff Kecamatan</p>
+                <p className="text-sm font-bold text-gray-800 leading-tight">{isCamat ? 'Drs. Ahmad Fauzi' : isDinas ? 'Rina Pramesti' : 'Siti Nurhaliza'}</p>
+                <p className="text-[10px] text-gray-500 font-medium">{isCamat ? 'Camat Kuranji' : isDinas ? 'Staff Dinas Dukcapil' : 'Staff Kecamatan'}</p>
               </div>
               <ChevronDown className="w-4 h-4 ml-3 text-gray-400" />
             </div>
