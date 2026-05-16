@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Check, FileText, LayoutGrid, BookOpen
 } from "lucide-react";
@@ -22,13 +22,15 @@ function StepItem({ num, label, label2, done, active }) {
   );
 }
 
-function Field({ label, defaultValue, placeholder }) {
+function Field({ label, name, value, onChange, placeholder, type = "text" }) {
   return (
     <div>
       <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#374151", marginBottom: 5 }}>{label}</label>
       <input
-        type="text"
-        defaultValue={defaultValue}
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
         placeholder={placeholder}
         style={{ width: "100%", padding: "9px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, color: "#1f2937", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
       />
@@ -62,28 +64,85 @@ function SummaryRow({ label, value, last }) {
 }
 
 export function TambahBerkas() {
-  const [selectedLayanan, setSelectedLayanan] = useState("ktp");
-  const [selectedSkenario, setSelectedSkenario] = useState("rusak");
-  const [checklist, setChecklist] = useState({ kk: true, polisi: true, foto: false });
+  // --- INTEGRASI LOGIKA ---
+  const [userLogin, setUserLogin] = useState(null);
+  const [formData, setFormData] = useState({
+    nama_warga: "",
+    nik_warga: "",
+    no_kk: "",
+    no_hp: "",
+    kecamatan: "Kuranji",
+    kelurahan: "",
+    alamat: "",
+    catatan_staff: "",
+  });
+  const [selectedLayanan, setSelectedLayanan] = useState("1"); // Default: KTP (1)
+  const [selectedSkenario, setSelectedSkenario] = useState("1"); // Default: Baru (1)
+  const [checklist, setChecklist] = useState({ kk: true, polisi: false, foto: false });
+  const [isLoading, setIsLoading] = useState(false);
+  const [noRegResult, setNoRegResult] = useState("JB-2025-XXXXX");
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) setUserLogin(JSON.parse(savedUser));
+  }, []);
+
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.nama_warga || !formData.nik_warga) {
+      alert("Nama dan NIK wajib diisi!");
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch("http://localhost:3000/api/daftar-berkas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          layanan: selectedLayanan,
+          sub_layanan: selectedSkenario,
+          penanggung_jawab_id: userLogin?.id_staf || "STAFF_ANONYMOUS",
+          id_kecamatan_asal: userLogin?.id_kecamatan || "kuranji",
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setNoRegResult(result.no_registrasi);
+        alert("Pendaftaran Berhasil! Nomor: " + result.no_registrasi);
+      } else {
+        alert("Gagal: " + result.message);
+      }
+    } catch (error) {
+      alert("Koneksi Backend Gagal!");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const layananList = [
-    { id: "ktp", icon: <FileText size={16} />, name: "KTP-el", desc: "Perekaman, penggantian, atau cetak ulang KTP elektronik." },
-    { id: "kk", icon: <LayoutGrid size={16} />, name: "Kartu Keluarga", desc: "Pembuatan, perubahan data, atau cetak ulang KK." },
-    { id: "akta", icon: <BookOpen size={16} />, name: "Akta Kelahiran", desc: "Penerbitan akta baru, terlambat, atau duplikat." },
+    { id: "1", icon: <FileText size={16} />, name: "KTP-el", desc: "Perekaman, penggantian, atau cetak ulang KTP elektronik." },
+    { id: "2", icon: <LayoutGrid size={16} />, name: "Kartu Keluarga", desc: "Pembuatan, perubahan data, atau cetak ulang KK." },
+    { id: "3", icon: <BookOpen size={16} />, name: "Akta Kelahiran", desc: "Penerbitan akta baru, terlambat, atau duplikat." },
   ];
 
   const skenarioList = [
-    { id: "baru", label: "KTP Baru" },
-    { id: "rusak", label: "KTP Rusak" },
-    { id: "perubahan", label: "Perubahan Data" },
+    { id: "1", label: "Baru / Perekaman" },
+    { id: "2", label: "Rusak / Hilang" },
+    { id: "3", label: "Perubahan Data" },
   ];
 
   const steps = [
-    { num: 1, label: "Pilih", label2: "Layanan", done: true },
-    { num: 2, label: "Pilih", label2: "Skenario", active: true },
-    { num: 3, label: "Data", label2: "Pemohon" },
+    { num: 1, label: "Pilih", label2: "Layanan", done: noRegResult !== "JB-2025-XXXXX" },
+    { num: 2, label: "Pilih", label2: "Skenario", done: noRegResult !== "JB-2025-XXXXX" },
+    { num: 3, label: "Data", label2: "Pemohon", active: noRegResult === "JB-2025-XXXXX" },
     { num: 4, label: "Checklist", label2: "Berkas" },
-    { num: 5, label: "Nomor", label2: "Registrasi" },
+    { num: 5, label: "Nomor", label2: "Registrasi", active: noRegResult !== "JB-2025-XXXXX" },
   ];
 
   return (
@@ -94,7 +153,7 @@ export function TambahBerkas() {
         <div style={{ padding: "18px 26px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, color: "#112340" }}>Form Pengajuan Layanan</div>
-            <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>Input data pengajuan masyarakat dan mulai tracking berkas.</div>
+            <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>Petugas: {userLogin?.nama_lengkap || "Staff"}</div>
           </div>
           <button style={{ padding: "7px 14px", background: "#fff", border: "1px solid #e5e7eb", color: "#374151", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
             Simpan Draft
@@ -172,19 +231,19 @@ export function TambahBerkas() {
               <div style={{ fontSize: 13, fontWeight: 800, color: "#1f2937" }}>Step 3 — Data Pemohon</div>
               <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2, marginBottom: 14 }}>Lengkapi data masyarakat yang mengajukan layanan.</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 18px" }}>
-                <Field label="Nama Lengkap" defaultValue="Andi Saputra" />
-                <Field label="NIK" defaultValue="3276XXXXXXX0001" />
-                <Field label="Nomor KK" placeholder="Masukkan nomor KK" />
-                <Field label="Nomor HP" placeholder="Masukkan nomor HP" />
-                <Field label="Kecamatan" defaultValue="Kecamatan Sukamaju" />
-                <Field label="Kelurahan/Desa" defaultValue="Kelurahan Melati" />
+                <Field label="Nama Lengkap" name="nama_warga" value={formData.nama_warga} onChange={handleInputChange} placeholder="Andi Saputra" />
+                <Field label="NIK" name="nik_warga" value={formData.nik_warga} onChange={handleInputChange} placeholder="16 digit NIK" />
+                <Field label="Nomor KK" name="no_kk" value={formData.no_kk} onChange={handleInputChange} placeholder="Masukkan nomor KK" />
+                <Field label="Nomor HP" name="no_hp" value={formData.no_hp} onChange={handleInputChange} placeholder="Masukkan nomor HP" />
+                <Field label="Kecamatan" name="kecamatan" value={formData.kecamatan} onChange={handleInputChange} defaultValue="Kuranji" />
+                <Field label="Kelurahan/Desa" name="kelurahan" value={formData.kelurahan} onChange={handleInputChange} placeholder="Kelurahan Melati" />
                 <div style={{ gridColumn: "1 / -1" }}>
                   <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#374151", marginBottom: 5 }}>Alamat</label>
-                  <textarea rows={3} placeholder="Masukkan alamat lengkap" style={{ width: "100%", padding: "9px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, outline: "none", resize: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+                  <textarea name="alamat" value={formData.alamat} onChange={handleInputChange} rows={3} placeholder="Masukkan alamat lengkap" style={{ width: "100%", padding: "9px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, outline: "none", resize: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
                 </div>
                 <div style={{ gridColumn: "1 / -1" }}>
                   <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#374151", marginBottom: 5 }}>Catatan Staff</label>
-                  <textarea rows={3} placeholder="Tambahkan catatan jika diperlukan" style={{ width: "100%", padding: "9px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, outline: "none", resize: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+                  <textarea name="catatan_staff" value={formData.catatan_staff} onChange={handleInputChange} rows={3} placeholder="Tambahkan catatan jika diperlukan" style={{ width: "100%", padding: "9px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, outline: "none", resize: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
                 </div>
               </div>
             </div>
@@ -208,21 +267,20 @@ export function TambahBerkas() {
             {/* Ringkasan */}
             <div style={{ background: "#f8fafc", borderRadius: 12, padding: 18 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#112340", marginBottom: 14 }}>Ringkasan Pengajuan</div>
-              <SummaryRow label="Layanan" value="KTP-el" />
-              <SummaryRow label="Skenario" value="KTP Hilang" />
-              <SummaryRow label="Nama" value="Andi Saputra" />
-              <SummaryRow label="PIC Awal" value="Staff Kecamatan" />
+              <SummaryRow label="Layanan" value={selectedLayanan === "1" ? "KTP-el" : selectedLayanan === "2" ? "KK" : "Akta"} />
+              <SummaryRow label="Skenario" value={selectedSkenario === "1" ? "Baru" : selectedSkenario === "2" ? "Rusak" : "Ubah Data"} />
+              <SummaryRow label="Nama" value={formData.nama_warga || "—"} />
+              <SummaryRow label="Petugas" value={userLogin?.nama_lengkap.split(" ")[0] || "Staff"} />
               <SummaryRow label="Status Awal" value="Berkas Diterima" last />
             </div>
 
             {/* Step 5 */}
             <div style={{ background: "#112340", borderRadius: 12, padding: 18, color: "#fff" }}>
               <div style={{ fontSize: 11, color: "#93c5fd", fontWeight: 500, marginBottom: 4 }}>Step 5 — Nomor Registrasi</div>
-              <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5, marginBottom: 14 }}>JB-2025-00128</div>
+              <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5, marginBottom: 14 }}>{noRegResult}</div>
               {[
-                { label: "Estimasi Kecamatan", value: "30 Menit" },
-                { label: "Estimasi Dinas", value: "2 Jam" },
-                { label: "Status Awal", value: "Berkas Diterima", last: true },
+                { label: "Estimasi Kecamatan", value: "Menghitung..." },
+                { label: "Status", value: noRegResult !== "JB-2025-XXXXX" ? "Terdaftar" : "Draft", last: true },
               ].map(({ label, value, last }) => (
                 <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, paddingBottom: last ? 0 : 10, marginBottom: last ? 0 : 10, borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.1)" }}>
                   <span style={{ color: "#9ca3af" }}>{label}</span>
@@ -241,13 +299,13 @@ export function TambahBerkas() {
           </button>
           <div style={{ display: "flex", gap: 8 }}>
             <button style={{ padding: "8px 14px", background: "#fff", border: "1px solid #0a58ca", color: "#0a58ca", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-              Salin Nomor Registrasi
+              Salin Nomor
             </button>
-            <button style={{ padding: "8px 14px", background: "#fff", border: "1px solid #0a58ca", color: "#0a58ca", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-              Cetak Bukti Registrasi
-            </button>
-            <button style={{ padding: "8px 18px", background: "#0a58ca", border: "none", color: "#fff", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-              Mulai Tracking
+            <button 
+              onClick={handleSubmit}
+              disabled={isLoading}
+              style={{ padding: "8px 18px", background: isLoading ? "#9ca3af" : "#0a58ca", border: "none", color: "#fff", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: isLoading ? "default" : "pointer" }}>
+              {isLoading ? "Memproses..." : "Mulai Tracking"}
             </button>
           </div>
         </div>
