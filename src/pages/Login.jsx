@@ -231,17 +231,7 @@ const Login = () => {
               </button>
             </form>
 
-            <div className="mt-8 relative flex items-center justify-center">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative bg-white px-4 text-xs text-gray-400">atau masuk dengan</div>
-            </div>
 
-            <button className="w-full mt-8 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded-xl flex items-center justify-center transition-all shadow-sm">
-              <LayoutTemplate className="w-4 h-4 mr-2 text-gray-500" />
-              Masuk dengan SSO Pemerintah
-            </button>
 
             <div className="mt-10 text-center">
               <p className="text-sm text-gray-500 mb-1">Belum memiliki akses?</p>
