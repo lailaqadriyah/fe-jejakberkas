@@ -19,8 +19,8 @@ import logoImage from '../assets/logo2.png';
 const Login = () => {
   // --- STATE UNTUK INTEGRASI BACKEND ---
   const [showPassword, setShowPassword] = useState(false);
-  const [idStaf, setIdStaf] = useState('');
-  const [namaLengkap, setNamaLengkap] = useState(''); // Berfungsi sebagai 'password' sementara
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -39,8 +39,8 @@ const Login = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id_staf: idStaf,
-          nama_lengkap: namaLengkap
+          username: username,
+          password: password
         }),
       });
 
@@ -50,8 +50,6 @@ const Login = () => {
         localStorage.setItem('user', JSON.stringify(data.user));
         
         const role = (data.user.role || '').toString().toLowerCase();
-        // Normalize role strings from Firestore.
-        // Important: check 'kecamatan' before 'camat' because 'kecamatan' contains 'camat' as substring.
         if (role.includes('kecamatan')) navigate('/home');
         else if (role.includes('camat')) navigate('/camat');
         else if (role.includes('dinas')) navigate('/dinas');
@@ -59,7 +57,6 @@ const Login = () => {
         else if (role.includes('biro') || role.includes('organisasi')) navigate('/biro-organisasi');
         else navigate('/home');
       } else {
-        // Tampilkan pesan error jika salah ID atau Nama
         setErrorMsg(data.message);
       }
     } catch (error) {
@@ -167,16 +164,16 @@ const Login = () => {
             <form className="space-y-6" onSubmit={handleLogin}>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">ID Staf / Username</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Username</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <User className="w-5 h-5 text-gray-400" />
                   </div>
                   <input 
                     type="text" 
-                    placeholder="Contoh: STAFF_KEC_02" 
-                    value={idStaf}
-                    onChange={(e) => setIdStaf(e.target.value)}
+                    placeholder="Masukkan username Anda" 
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     required
                     className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
@@ -196,9 +193,9 @@ const Login = () => {
                   </div>
                   <input 
                     type={showPassword ? "text" : "password"} 
-                    placeholder="Masukkan password" 
-                    value={namaLengkap}
-                    onChange={(e) => setNamaLengkap(e.target.value)}
+                    placeholder="Masukkan password Anda" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     required
                     className="w-full pl-12 pr-12 py-3.5 bg-white border border-gray-200 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
@@ -232,13 +229,6 @@ const Login = () => {
                 {!isLoading && <ArrowRight className="w-5 h-5 ml-2" />}
               </button>
             </form>
-
-
-
-            <div className="mt-10 text-center">
-              <p className="text-sm text-gray-500 mb-1">Belum memiliki akses?</p>
-              <a href="#" className="text-sm font-bold text-[#0056b3] hover:underline">Hubungi Administrator</a>
-            </div>
 
           </div>
         </div>

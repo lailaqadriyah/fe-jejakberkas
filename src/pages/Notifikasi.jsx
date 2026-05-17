@@ -52,7 +52,12 @@ export function Notifikasi() {
     ];
   };
 
+  const [searchTerm, setSearchTerm] = useState('');
   const notifications = getNotificationsByRole();
+  const filteredNotifs = notifications.filter(n => 
+    n.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    n.message.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const getIcon = (type) => {
     switch(type) {
@@ -90,6 +95,8 @@ export function Notifikasi() {
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input 
               type="text" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Cari notifikasi..." 
               className="pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-48"
             />
@@ -103,7 +110,7 @@ export function Notifikasi() {
       {/* Notification List */}
       <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
         <div className="divide-y divide-gray-50">
-          {notifications.map((notif) => (
+          {filteredNotifs.length > 0 ? filteredNotifs.map((notif) => (
             <div 
               key={notif.id} 
               className={`p-5 flex items-start gap-4 transition-colors hover:bg-gray-50 ${!notif.read ? 'bg-blue-50/20' : 'bg-white'}`}
@@ -134,14 +141,20 @@ export function Notifikasi() {
                 <MoreHorizontal className="w-5 h-5" />
               </button>
             </div>
-          ))}
+          )) : (
+            <div className="p-10 text-center text-gray-500 text-sm">
+              Tidak ada notifikasi yang sesuai pencarian.
+            </div>
+          )}
         </div>
         
-        <div className="p-4 bg-gray-50 text-center border-t border-gray-100">
-          <button className="text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors">
-            Muat Lebih Banyak
-          </button>
-        </div>
+        {filteredNotifs.length > 0 && (
+          <div className="p-4 bg-gray-50 text-center border-t border-gray-100">
+            <button className="text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors">
+              Muat Lebih Banyak
+            </button>
+          </div>
+        )}
       </div>
 
     </div>

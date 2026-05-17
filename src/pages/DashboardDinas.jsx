@@ -376,7 +376,7 @@ export function DashboardDinas() {
                 <div style={{ fontSize: 13, fontWeight: 800, color: '#0f1f3d' }}>Konfirmasi Berkas</div>
                 <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>Input tracking berkas dari Kecamatan ke Dinas.</div>
               </div>
-              <div style={{ padding: '18px 20px 20px', background: '#1a4fca', margin: 16, borderRadius: 10 }}>
+              {/* <die style={{ padding: '18px 20px 20px', background: '#1a4fca', margin: 16, borderRadius: 10 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', marginBottom: 4 }}>Input Nomor Registrasi</div>
                 <div style={{ fontSize: 11, color: '#93c5fd', marginBottom: 14 }}>Gunakan nomor registrasi dari berkas yang datang dari Kecamatan untuk memulai proses.</div>
                 <input
@@ -392,7 +392,7 @@ export function DashboardDinas() {
                 >
                   Konfirmasi Berkas Diterima
                 </button>
-              </div>
+              </die> */}
 
               {/* Berkas menunggu list */}
               {berkasMenunggu.length > 0 && (

@@ -14,6 +14,7 @@ import { PenaltiSaya } from "../pages/PenaltiSaya";
 import { Notifikasi } from "../pages/Notifikasi";
 import { Profil } from "../pages/Profil";
 import { AturanSLA } from "../pages/AturanSLA";
+import { SearchResults } from "../pages/SearchResults";
 
 export function AppRouter() {
   return (
@@ -26,6 +27,7 @@ export function AppRouter() {
         <Route path="/tambah-berkas" element={<TambahBerkas />} />
         <Route path="/tracking/:id" element={<TrackingDetail />} />
         <Route path="/tracking-dinas/:id" element={<TrackingDetail />} />
+        <Route path="/search" element={<SearchResults />} />
         <Route path="/camat" element={<DashboardCamat />} />
         <Route path="/dinas" element={<DashboardDinas />} />
         <Route path="/kepala-dinas" element={<DashboardKepalaDinas />} />

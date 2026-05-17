@@ -10,6 +10,7 @@ export function DashboardCamat() {
   const [stats, setStats] = useState(null);
   const [menungguTTD, setMenungguTTD] = useState([]);
   const [stafList, setStafList] = useState([]);
+  const [nameMap, setNameMap] = useState({});
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
@@ -26,27 +27,60 @@ export function DashboardCamat() {
 
       // Fetch data staf dari collection staf_performa
       try {
-        const stafRes = await fetch(`${API}/berkas?limit=100`);
-        const stafJson = await stafRes.json();
+        const [stafDataRes, berkasRes] = await Promise.all([
+          fetch(`${API}/staf`),
+          fetch(`${API}/berkas?limit=100`)
+        ]);
+        const stafDataJson = await stafDataRes.json();
+        const berkasJson = await berkasRes.json();
+
+        // Buat mapping ID -> Nama Lengkap (support id doc + id_staf + fallback demo)
+        const tempNameMap = {
+          'STAFF_KECAMATAN': 'Siti Nurhaliza',
+          'STAFF_KEC_01': 'Siti Nurhaliza',
+        };
+        if (stafDataJson.success) {
+          let firstStaffKecamatanName = null;
+          stafDataJson.data.forEach(s => {
+            if (s?.id) tempNameMap[String(s.id).toUpperCase()] = s.nama_lengkap;
+            if (s?.id_staf) tempNameMap[String(s.id_staf).toUpperCase()] = s.nama_lengkap;
+            if (!firstStaffKecamatanName && String(s?.role || '').toLowerCase().includes('kecamatan')) {
+              firstStaffKecamatanName = s.nama_lengkap;
+            }
+          });
+          if (firstStaffKecamatanName) {
+            tempNameMap['STAFF_KECAMATAN'] = firstStaffKecamatanName;
+          }
+          setNameMap(tempNameMap);
+        }
+
         // Aggregate staf dari data berkas
-        if (stafJson.success) {
+        if (berkasJson.success) {
           const stafMap = {};
-          stafJson.data.forEach(b => {
-            if (b.penanggung_jawab_id) {
-              if (!stafMap[b.penanggung_jawab_id]) {
-                stafMap[b.penanggung_jawab_id] = { name: b.penanggung_jawab_id, total: 0, tepat: 0, terlambat: 0 };
+          berkasJson.data.forEach(b => {
+            const picId = b.penanggung_jawab_id;
+            const picKey = String(picId || '').toUpperCase();
+            if (picId && !picKey.includes('DINAS')) {
+              const displayName = tempNameMap[picKey] || tempNameMap[picId] || picId;
+              // Skip jika nama lengkap mengandung DINAS (tambahan keamanan)
+              if (displayName.toUpperCase().includes('DINAS')) return;
+
+              if (!stafMap[picId]) {
+                stafMap[picId] = { name: displayName, total: 0, tepat: 0, terlambat: 0 };
               }
-              stafMap[b.penanggung_jawab_id].total++;
+              stafMap[picId].total++;
               if (b.waktu_berkas_diterima_warga) {
-                stafMap[b.penanggung_jawab_id].tepat++;
+                stafMap[picId].tepat++;
               } else {
-                stafMap[b.penanggung_jawab_id].terlambat++;
+                stafMap[picId].terlambat++;
               }
             }
           });
           setStafList(Object.values(stafMap));
         }
-      } catch {}
+      } catch (err) {
+        console.error("Gagal fetch data staf:", err);
+      }
     } catch (err) {
       console.error('Gagal fetch data camat:', err);
     } finally {
@@ -178,7 +212,7 @@ export function DashboardCamat() {
                         <td style={{ padding: '13px 18px', fontSize: 11, color: '#2563eb', fontWeight: 700 }}>{row.no_registrasi}</td>
                         <td style={{ padding: '13px 18px', fontSize: 11, fontWeight: 600, color: '#111827' }}>{row.nama_warga}</td>
                         <td style={{ padding: '13px 18px', fontSize: 11, fontWeight: 600, color: '#111827' }}>{row.layanan === 1 ? 'KTP' : row.layanan === 2 ? 'KK' : 'Akta'}</td>
-                        <td style={{ padding: '13px 18px', fontSize: 11, color: '#4b5563' }}>{row.penanggung_jawab_id}</td>
+                        <td style={{ padding: '13px 18px', fontSize: 11, color: '#4b5563' }}>{nameMap[String(row.penanggung_jawab_id || '').toUpperCase()] || nameMap[row.penanggung_jawab_id] || row.penanggung_jawab_id}</td>
                         <td style={{ padding: '13px 18px', fontSize: 11, fontWeight: 700, color: '#f97316' }}>{row.estimasi_ml_kecamatan?.range || '-'}</td>
                         <td style={{ padding: '13px 18px' }}>
                           <span style={{ display: 'inline-block', padding: '4px 9px', fontSize: 10, fontWeight: 800, color: '#f97316', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 5, whiteSpace: 'nowrap' }}>

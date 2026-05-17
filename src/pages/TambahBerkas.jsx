@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import {
   Check, FileText, LayoutGrid, BookOpen
@@ -65,6 +66,7 @@ function SummaryRow({ label, value, last }) {
 }
 
 export function TambahBerkas() {
+  const navigate = useNavigate();
   // --- INTEGRASI LOGIKA ---
   const [userLogin, setUserLogin] = useState(null);
   const [formData, setFormData] = useState({
@@ -138,7 +140,7 @@ export function TambahBerkas() {
 
   const skenarioList = [
     { id: "1", label: "Baru / Perekaman" },
-    { id: "2", label: "Rusak / Hilang" },
+    { id: "2", label: "Rusak" },
     { id: "3", label: "Perubahan Data" },
   ];
 
@@ -160,9 +162,6 @@ export function TambahBerkas() {
             <div style={{ fontSize: 16, fontWeight: 800, color: "#112340" }}>Form Pengajuan Layanan</div>
             <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>Petugas: {userLogin?.nama_lengkap || "Staff"}</div>
           </div>
-          <button style={{ padding: "7px 14px", background: "#fff", border: "1px solid #e5e7eb", color: "#374151", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
-            Simpan Draft
-          </button>
         </div>
 
         {/* Stepper */}
@@ -246,10 +245,7 @@ export function TambahBerkas() {
                   <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#374151", marginBottom: 5 }}>Alamat</label>
                   <textarea name="alamat" value={formData.alamat} onChange={handleInputChange} rows={3} placeholder="Masukkan alamat lengkap" style={{ width: "100%", padding: "9px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, outline: "none", resize: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
                 </div>
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#374151", marginBottom: 5 }}>Catatan Staff</label>
-                  <textarea name="catatan_staff" value={formData.catatan_staff} onChange={handleInputChange} rows={3} placeholder="Tambahkan catatan jika diperlukan" style={{ width: "100%", padding: "9px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12, outline: "none", resize: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
-                </div>
+              
               </div>
             </div>
 
@@ -270,33 +266,20 @@ export function TambahBerkas() {
               <SummaryRow label="Status Awal" value="Berkas Diterima" last />
             </div>
 
-            {/* Step 5 */}
-            <div style={{ background: "#112340", borderRadius: 12, padding: 18, color: "#fff" }}>
-              <div style={{ fontSize: 11, color: "#93c5fd", fontWeight: 500, marginBottom: 4 }}>Step 5 — Nomor Registrasi</div>
-              <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5, marginBottom: 14 }}>{noRegResult}</div>
-              {[
-                { label: "Estimasi Kecamatan", value: "Menghitung..." },
-                { label: "Status", value: noRegResult !== "JB-2025-XXXXX" ? "Terdaftar" : "Draft", last: true },
-              ].map(({ label, value, last }) => (
-                <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, paddingBottom: last ? 0 : 10, marginBottom: last ? 0 : 10, borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.1)" }}>
-                  <span style={{ color: "#9ca3af" }}>{label}</span>
-                  <span style={{ color: "#fff", fontWeight: 500 }}>{value}</span>
-                </div>
-              ))}
-            </div>
+        
 
           </div>
         </div>
 
         {/* Footer */}
         <div style={{ padding: "14px 26px", borderTop: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <button style={{ padding: "8px 18px", background: "#fff", border: "1px solid #e5e7eb", color: "#374151", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+          <button 
+            onClick={() => navigate(-1)}
+            style={{ padding: "8px 18px", background: "#fff", border: "1px solid #e5e7eb", color: "#374151", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+          >
             Kembali
           </button>
           <div style={{ display: "flex", gap: 8 }}>
-            <button style={{ padding: "8px 14px", background: "#fff", border: "1px solid #0a58ca", color: "#0a58ca", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-              Salin Nomor
-            </button>
             <button 
               onClick={handleSubmit}
               disabled={isLoading}

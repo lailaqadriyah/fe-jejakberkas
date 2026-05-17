@@ -2,10 +2,22 @@ import React from 'react';
 import { AlertCircle, Clock, FileText, ArrowRight } from 'lucide-react';
 
 export function PenaltiSaya() {
+  const [user, setUser] = React.useState(null);
+  const [lateDocs, setLateDocs] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
   // Fungsi hitung poin telat per hari dari jam deadline
-  const hitungPenalti = (deadlineString, submitString) => {
-    const deadline = new Date(deadlineString);
-    const submit = new Date(submitString);
+  const hitungPenalti = (data) => {
+    if (!data.waktu_masuk_tahap_ini || !data.estimasi_ml_kecamatan) return { lateTime: '-', points: 0 };
+    
+    const waktuMasuk = new Date(data.waktu_masuk_tahap_ini._seconds * 1000);
+    const predictedMinutes = data.estimasi_ml_kecamatan.predicted_minutes || 45;
+    const deadline = new Date(waktuMasuk.getTime() + predictedMinutes * 60000);
+    
+    // Jika sudah selesai, gunakan waktu selesai. Jika belum, gunakan waktu sekarang.
+    const submit = data.waktu_berkas_diterima_warga 
+      ? new Date(data.waktu_berkas_diterima_warga._seconds * 1000) 
+      : new Date();
     
     // Jika tidak telat
     if (submit <= deadline) return { lateTime: '-', points: 0 };
@@ -13,42 +25,60 @@ export function PenaltiSaya() {
     // Selisih waktu dalam milidetik
     const diffMs = submit - deadline;
     
-    // Konversi ke hari (1 hari = 24 jam)
-    const diffDays = diffMs / (1000 * 60 * 60 * 24);
-    
     // Poin nambah 1 setiap berganti hari dari jam deadline (dibulatkan ke atas)
-    // Contoh: telat 1 menit = 1 poin. Telat 24 jam 1 menit = 2 poin.
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
     const points = Math.floor(diffDays) + 1;
 
     // Format keterlambatan untuk tampilan UI
-    const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const days = Math.floor(totalHours / 24);
-    const hours = totalHours % 24;
+    const totalMinutes = Math.floor(diffMs / 60000);
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
     
     let lateText = '';
-    if (days > 0) lateText += `${days} Hari `;
-    if (hours > 0 || days === 0) lateText += `${hours} Jam`;
-    if (days === 0 && hours === 0) lateText = '< 1 Jam';
+    if (hours > 0) lateText += `${hours} Jam `;
+    lateText += `${mins} Menit`;
 
     return { lateTime: lateText, points };
   };
 
-  // Mock data disimulasikan dengan tanggal
-  const lateDocumentsRaw = [
-    { id: 'JB-2025-00128', name: 'Budi Santoso', type: 'KTP-el', deadline: '2026-05-15T08:00:00', submit: '2026-05-15T09:30:00' }, // Telat hari H (1 poin)
-    { id: 'JB-2025-00145', name: 'Ani Yudhoyono', type: 'Kartu Keluarga', deadline: '2026-05-14T08:00:00', submit: '2026-05-15T10:00:00' }, // Telat lusa (2 poin)
-    { id: 'JB-2025-00162', name: 'Cahyo Kumolo', type: 'Akta Kelahiran', deadline: '2026-05-10T15:00:00', submit: '2026-05-15T16:00:00' }, // Telat 5 hari (6 poin)
-    { id: 'JB-2025-00188', name: 'Dewi Sartika', type: 'KTP-el', deadline: '2026-05-16T08:00:00', submit: '2026-05-16T08:15:00' }, // Telat 15 menit (1 poin)
-  ];
+  React.useEffect(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      const u = JSON.parse(savedUser);
+      setUser(u);
+      fetchPenalties(u.id_staf);
+    }
+  }, []);
 
-  // Mapping data untuk memasukkan hasil perhitungan
-  const lateDocuments = lateDocumentsRaw.map(doc => {
-    const { lateTime, points } = hitungPenalti(doc.deadline, doc.submit);
-    return { ...doc, lateTime, points };
-  });
+  const fetchPenalties = async (stafId) => {
+    setLoading(true);
+    try {
+      // Fetch all berkas for this staff
+      const res = await fetch(`http://localhost:3000/api/berkas?limit=100`);
+      const json = await res.json();
+      if (json.success) {
+        // Filter berkas yang ditangani staf ini DAN teridentifikasi telat (is_penalty_triggered atau kalkulasi manual)
+        const myLateDocs = json.data
+          .filter(b => b.penanggung_jawab_id === stafId)
+          .map(b => {
+            const { lateTime, points } = hitungPenalti(b);
+            return { ...b, lateTime, points };
+          })
+          .filter(b => b.points > 0);
+        
+        setLateDocs(myLateDocs);
+      }
+    } catch (err) {
+      console.error('Failed to fetch penalties:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const totalPoints = lateDocuments.reduce((acc, curr) => acc + curr.points, 0);
-  const totalDocs = lateDocuments.length;
+  const totalPoints = lateDocs.reduce((acc, curr) => acc + curr.points, 0);
+  const totalDocs = lateDocs.length;
+
+  if (loading) return <div className="p-10 text-center text-gray-500">Memuat data penalti...</div>;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 font-sans">
@@ -138,17 +168,17 @@ export function PenaltiSaya() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {lateDocuments.map((doc, index) => (
-                <tr key={doc.id} className="hover:bg-gray-50/50 transition-colors group">
+              {lateDocs.map((doc, index) => (
+                <tr key={doc.no_registrasi} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="py-4 px-6">
-                    <span className="text-sm font-bold text-blue-600">{doc.id}</span>
+                    <span className="text-sm font-bold text-blue-600">{doc.no_registrasi}</span>
                   </td>
                   <td className="py-4 px-6">
-                    <span className="text-sm font-semibold text-gray-800">{doc.name}</span>
+                    <span className="text-sm font-semibold text-gray-800">{doc.nama_warga}</span>
                   </td>
                   <td className="py-4 px-6">
                     <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-gray-100 text-gray-600">
-                      {doc.type}
+                      {doc.layanan === 1 ? 'KTP' : doc.layanan === 2 ? 'KK' : 'Akta'}
                     </span>
                   </td>
                   <td className="py-4 px-6">
@@ -169,7 +199,7 @@ export function PenaltiSaya() {
                   </td>
                 </tr>
               ))}
-              {lateDocuments.length === 0 && (
+              {lateDocs.length === 0 && (
                 <tr>
                   <td colSpan="6" className="py-12 text-center text-gray-500 text-sm font-medium">
                     Tidak ada catatan keterlambatan bulan ini. Kerja bagus!

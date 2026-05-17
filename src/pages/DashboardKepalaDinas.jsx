@@ -8,28 +8,46 @@ export function DashboardKepalaDinas() {
   const [stats, setStats] = useState(null);
   const [berkasDinas, setBerkasDinas] = useState([]);
   const [stafList, setStafList] = useState([]);
+  const [nameMap, setNameMap] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsRes, dinasRes] = await Promise.all([
+        const [statsRes, dinasRes, stafRes] = await Promise.all([
           fetch(`${API}/berkas/stats`),
           fetch(`${API}/berkas?tahapan=DINAS&limit=100`),
+          fetch(`${API}/staf`)
         ]);
         const statsJson = await statsRes.json();
         const dinasJson = await dinasRes.json();
+        const stafJson = await stafRes.json();
+
         if (statsJson.success) setStats(statsJson.data);
+        
+        // Buat mapping ID -> Nama Lengkap
+        const tempNameMap = {};
+        if (stafJson.success) {
+          stafJson.data.forEach(s => {
+            tempNameMap[s.id] = s.nama_lengkap;
+          });
+          setNameMap(tempNameMap);
+        }
+
         if (dinasJson.success) {
           setBerkasDinas(dinasJson.data);
           // aggregate staff performance
           const staffMap = {};
           dinasJson.data.forEach(b => {
-            const pic = b.penanggung_jawab_id || 'Unknown';
-            if (!staffMap[pic]) staffMap[pic] = { name: pic, total: 0, tepat: 0, terlambat: 0 };
-            staffMap[pic].total++;
-            if (b.waktu_berkas_diterima_warga) staffMap[pic].tepat++;
-            else staffMap[pic].terlambat++;
+            const picId = b.penanggung_jawab_id || 'Unknown';
+            // Filter: Hanya staff yang ID/nama mengandung DINAS
+            if (!picId.includes('DINAS') && !(tempNameMap[picId] || '').includes('DINAS')) return;
+
+            const displayName = tempNameMap[picId] || picId;
+            if (!staffMap[picId]) staffMap[picId] = { name: displayName, total: 0, tepat: 0, terlambat: 0 };
+            staffMap[picId].total++;
+            if (b.waktu_berkas_diterima_warga) staffMap[picId].tepat++;
+            else staffMap[picId].terlambat++;
           });
           setStafList(Object.values(staffMap));
         }
@@ -103,52 +121,7 @@ export function DashboardKepalaDinas() {
       {/* Main Grid */}
       <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 18 }}>
-          {/* Monitoring Dokumen Aktif */}
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, overflow: 'hidden' }}>
-            <div style={{ padding: '18px 22px 14px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#0f1f3d' }}>Monitoring Dokumen Aktif</div>
-                <div style={{ fontSize: 11, color: '#6b7280', marginTop: 3 }}>Pantau status dokumen yang sedang diproses oleh Staff Dinas.</div>
-              </div>
-              <button style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: '1px solid #e5e7eb', borderRadius: 7, fontSize: 10, fontWeight: 700, color: '#374151', background: '#fff', cursor: 'pointer', whiteSpace: 'nowrap' }}>Semua Status ▾</button>
-            </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: '#f9fafb', borderBottom: '1px solid #f3f4f6' }}>
-                    {['No. Registrasi', 'Nama Warga', 'Layanan', 'Staff Dinas', 'Status Proses', 'SLA', 'Estimasi', 'Aksi'].map(h => (
-                      <th key={h} style={{ padding: '10px 18px', fontSize: 10, fontWeight: 800, color: '#111827', textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {berkasDinas.length === 0 ? (
-                    <tr><td colSpan={8} style={{ padding: 20, textAlign: 'center', color: '#9ca3af', fontSize: 11 }}>Belum ada berkas di tahap Dinas.</td></tr>
-                  ) : (
-                    berkasDinas.slice(0, 10).map((row, i) => {
-                      const [statusLabel, statusColor, statusBg, statusBorder] = getStatusStyle(row.posisi_berkas);
-                      return (
-                        <tr key={i} style={{ borderBottom: i < Math.min(berkasDinas.length, 10) - 1 ? '1px solid #f3f4f6' : 'none' }}>
-                          <td style={{ padding: '13px 18px', fontSize: 11, color: '#2563eb', fontWeight: 700 }}>{row.no_registrasi}</td>
-                          <td style={{ padding: '13px 18px', fontSize: 11, fontWeight: 600, color: '#111827' }}>{row.nama_warga}</td>
-                          <td style={{ padding: '13px 18px', fontSize: 11, color: '#4b5563' }}>{row.layanan === 1 ? 'KTP' : row.layanan === 2 ? 'KK' : 'Akta'}</td>
-                          <td style={{ padding: '13px 18px', fontSize: 11, color: '#4b5563' }}>{row.penanggung_jawab_id || '-'}</td>
-                          <td style={{ padding: '13px 18px' }}>
-                            <span style={{ display: 'inline-block', padding: '4px 9px', fontSize: 10, fontWeight: 800, color: statusColor, background: statusBg, border: `1px solid ${statusBorder}`, borderRadius: 5, whiteSpace: 'nowrap' }}>{statusLabel}</span>
-                          </td>
-                          <td style={{ padding: '13px 18px', fontSize: 11, fontWeight: 700, color: '#2563eb' }}>{row.estimasi_ml_kecamatan?.range || '-'}</td>
-                          <td style={{ padding: '13px 18px', fontSize: 11, color: '#111827' }}>{row.estimasi_ml_kecamatan?.predicted_minutes ? `${row.estimasi_ml_kecamatan.predicted_minutes}m` : '-'}</td>
-                          <td style={{ padding: '13px 18px' }}>
-                            <button onClick={() => navigate(`/tracking/${row.no_registrasi}?from=dinas`)} style={{ padding: '5px 10px', background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 10, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>Lihat Detail</button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+        
 
           {/* Monitoring Staff Dinas */}
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14 }}>

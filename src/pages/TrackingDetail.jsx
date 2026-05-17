@@ -49,6 +49,10 @@ export function TrackingDetail() {
   const [actionLoading, setActionLoading] = useState(false);
 
   const regNo = id || no_registrasi;
+  const location = useLocation();
+  const fromParam = new URLSearchParams(location.search).get('from');
+  const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const myRole = (savedUser.role || '').toString().toLowerCase();
 
   useEffect(() => {
     if (!regNo) {
@@ -176,10 +180,6 @@ export function TrackingDetail() {
   };
 
   // Determine whether to show Dinas action panel based on caller (query) or user role
-  const location = useLocation();
-  const fromParam = new URLSearchParams(location.search).get('from');
-  const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
-  const myRole = (savedUser.role || '').toString().toLowerCase();
   const dinasStartIdx = displayedOrder.indexOf("KONFIRMASI_WARGA_KE_DINAS");
   const isFaseDinas = currentIndex >= dinasStartIdx;
   // Priority: explicit caller route wins. If route is tracking-dinas -> show dinas panel.
@@ -246,9 +246,7 @@ export function TrackingDetail() {
             <h2 style={{ fontSize: 28, fontWeight: 900, color: "#112340", letterSpacing: -1, margin: 0 }}>{data.no_registrasi}</h2>
             <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>Detail tracking pengajuan layanan masyarakat</p>
           </div>
-          <button style={{ padding: "8px 16px", border: "1px solid #bfdbfe", color: "#2563eb", borderRadius: 10, fontSize: 11, fontWeight: 700, background: "#fff", cursor: "pointer" }}>
-            Verifikasi Dokumen
-          </button>
+
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
@@ -468,18 +466,7 @@ export function TrackingDetail() {
             </div>
           </div>
 
-          {/* Document Checklist */}
-          <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", padding: "22px 24px" }}>
-            <h3 style={{ fontSize: 13, fontWeight: 700, color: "#112340", margin: "0 0 14px" }}>Document Checklist</h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {["Fotokopi KK", "Surat Hilang Polisi", "Formulir Permohonan"].map((doc) => (
-                <div key={doc} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid #f3f4f6", padding: "10px 12px", borderRadius: 12, background: "rgba(249,250,251,0.5)" }}>
-                  <span style={{ fontSize: 12, fontWeight: 500, color: "#374151" }}>{doc}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: "#16a34a" }}>Lengkap</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          
 
           {/* Approval History */}
           <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", padding: "22px 24px" }}>

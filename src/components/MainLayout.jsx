@@ -19,13 +19,19 @@ export function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [globalSearch, setGlobalSearch] = useState('');
+
+  const handleGlobalSearch = (e) => {
+    if (e.key === 'Enter' && globalSearch.trim()) {
+      navigate(`/search?q=${encodeURIComponent(globalSearch.trim())}`);
+      setGlobalSearch('');
+    }
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem('user');
     if (saved) setUser(JSON.parse(saved));
   }, []);
-
-  const navigate = useNavigate();
 
   // If a user is already stored in localStorage but currently on /home (default),
   // try to redirect them to their appropriate dashboard based on role.
@@ -42,10 +48,13 @@ export function MainLayout() {
     }
   }, [user, location.pathname, navigate]);
 
-  const isCamat = location.pathname.startsWith('/camat');
-  const isDinas = location.pathname.startsWith('/dinas') || location.pathname.startsWith('/tracking-dinas');
-  const isKepalaDinas = location.pathname.startsWith('/kepala-dinas');
-  const isBiroOrganisasi = location.pathname.startsWith('/biro-organisasi');
+  const role = (user?.role || '').toString().toLowerCase();
+  const isCamat = role.includes('camat');
+  const isDinas = role.includes('staff dinas');
+  const isKepalaDinas = role.includes('kepala');
+  const isBiroOrganisasi = role.includes('biro') || role.includes('organisasi');
+  const isStaffKecamatan = role.includes('kecamatan') && !isCamat;
+
   const displayProfile = {
     name: isCamat
       ? 'Drs. Ahmad Fauzi'
@@ -100,18 +109,14 @@ export function MainLayout() {
                 <LayoutDashboard className="w-4 h-4 mr-3" />
                 Dashboard
               </Link>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
+              <Link to="/home" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/home' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
                 <FileText className="w-4 h-4 mr-3" />
-                Monitoring Staff
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
+                Monitor Semua Berkas
+              </Link>
+              <Link to="/penalti" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/penalti' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
                 <AlertCircle className="w-4 h-4 mr-3" />
                 Penalti Staff
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
-                <History className="w-4 h-4 mr-3" />
-                Statistik Kecamatan
-              </a>
+              </Link>
             </>
           ) : isDinas ? (
             <>
@@ -119,22 +124,10 @@ export function MainLayout() {
                 <LayoutDashboard className="w-4 h-4 mr-3" />
                 Dashboard
               </Link>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <FilePlus className="w-4 h-4 mr-3" />
-                Berkas Masuk
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <FileText className="w-4 h-4 mr-3" />
-                Proses Berkas
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <MapPin className="w-4 h-4 mr-3" />
-                Tracking
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
+              <Link to="/penalti" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/penalti' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
                 <AlertCircle className="w-4 h-4 mr-3" />
-                ! Penalti Saya
-              </a>
+                Penalti Saya
+              </Link>
             </>
           ) : isKepalaDinas ? (
             <>
@@ -142,41 +135,21 @@ export function MainLayout() {
                 <LayoutDashboard className="w-4 h-4 mr-3" />
                 Dashboard
               </Link>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <FileText className="w-4 h-4 mr-3" />
-                Monitoring Staff Dinas
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
+              <Link to="/penalti" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/penalti' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
                 <AlertCircle className="w-4 h-4 mr-3" />
-                ! Penalti Staff
-              </a>
+                Evaluasi Penalti
+              </Link>
             </>
           ) : isBiroOrganisasi ? (
             <>
               <Link to="/biro-organisasi" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/biro-organisasi' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
                 <LayoutDashboard className="w-4 h-4 mr-3" />
-                Dashboard Utama
+                Dashboard Evaluasi
               </Link>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
+              <Link to="/aturan-sla" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/aturan-sla' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
                 <FileText className="w-4 h-4 mr-3" />
-                Performa Kecamatan
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors">
-                <FileText className="w-4 h-4 mr-3" />
-                Performa Dinas
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
-                <AlertCircle className="w-4 h-4 mr-3" />
-                Grafik Penalti
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
-                <LayoutDashboard className="w-4 h-4 mr-3" />
-                Ranking Unit Kerja
-              </a>
-              <a href="#" className="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-sm transition-colors mt-2">
-                <FileText className="w-4 h-4 mr-3" />
-                Export Laporan
-              </a>
+                Aturan SLA
+              </Link>
             </>
           ) : (
             <>
@@ -186,20 +159,14 @@ export function MainLayout() {
               </Link>
               <Link to="/tambah-berkas" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/tambah-berkas' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
                 <FilePlus className="w-4 h-4 mr-3" />
-                Tambah Berkas
+                Daftar Berkas Baru
               </Link>
-              <Link to="/tracking/JB-2025-00128" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname.startsWith('/tracking') ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
-                <MapPin className="w-4 h-4 mr-3" />
-                Tracking Berkas
-              </Link>
-              <Link to="/penalti" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors mt-2 ${location.pathname === '/penalti' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+              <Link to="/penalti" className={`flex items-center px-4 py-3 rounded-xl font-medium text-sm transition-colors ${location.pathname === '/penalti' ? 'bg-[#2563eb] text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
                 <AlertCircle className="w-4 h-4 mr-3" />
                 Penalti Saya
               </Link>
             </>
           )}
-          
-
         </nav>
 
         {/* User Profile Card */}
@@ -249,12 +216,9 @@ export function MainLayout() {
         {/* Top Header */}
         <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 shrink-0 z-10">
           
-          {/* Left: Hamburger (Title & Breadcrumbs will be handled in children or passed down) */}
+          {/* Left: Title & Breadcrumbs */}
           <div className="flex items-center">
-            <button className="p-2 rounded-lg hover:bg-gray-50 border border-gray-200 text-gray-600 transition-colors">
-              <Menu className="w-5 h-5" />
-            </button>
-            <div id="header-portal" className="ml-6">
+            <div id="header-portal">
               {/* Children can portal their title/breadcrumb here, or we let children render their own top area.
                   For simplicity, let's remove title from layout header and let pages render their own title right below header,
                   OR render it conditionally. The mockup shows the header HAS the title.
@@ -365,6 +329,16 @@ export function MainLayout() {
                   </div>
                 </div>
               )}
+              {location.pathname === '/search' && (
+                <div>
+                  <h2 className="text-2xl font-bold text-[#112340]">Hasil Pencarian</h2>
+                  <div className="flex items-center text-xs text-gray-500 mt-1 font-medium">
+                    <span>Dashboard</span>
+                    <ChevronRight className="w-3 h-3 mx-1" />
+                    <span>Pencarian</span>
+                  </div>
+                </div>
+              )}
               {location.pathname === '/aturan-sla' && (
                 <div>
                   <h2 className="text-2xl font-bold text-[#112340]">Aturan SLA</h2>
@@ -384,10 +358,21 @@ export function MainLayout() {
             <div className="flex items-center w-64 bg-[#f8fafc] border border-gray-200 rounded-full px-4 py-2 focus-within:border-blue-400 focus-within:bg-white transition-all shadow-sm">
               <input 
                 type="text" 
+                value={globalSearch}
+                onChange={(e) => setGlobalSearch(e.target.value)}
+                onKeyDown={handleGlobalSearch}
                 placeholder="Cari nomor registrasi / nama warga..." 
                 className="bg-transparent border-none outline-none text-xs w-full text-gray-700 placeholder-gray-400"
               />
-              <Search className="w-4 h-4 text-gray-400 ml-2" />
+              <Search 
+                className="w-4 h-4 text-gray-400 ml-2 cursor-pointer hover:text-blue-500" 
+                onClick={() => {
+                  if (globalSearch.trim()) {
+                    navigate(`/search?q=${encodeURIComponent(globalSearch.trim())}`);
+                    setGlobalSearch('');
+                  }
+                }}
+              />
             </div>
             <Link to="/notifikasi" className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-full transition-colors border border-gray-200 shadow-sm">
               <Bell className="w-5 h-5" />
