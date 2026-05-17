@@ -236,7 +236,7 @@ const Login = () => {
 
       {/* Footer Strip */}
       <footer className="bg-[#112340] text-white/70 py-4 px-8 text-xs flex flex-col md:flex-row items-center justify-between mt-auto relative z-10">
-        <p>© 2024 JejakBerkas - Portal Layanan Publik Nasional</p>
+        <p>© 2026 JejakBerkas - Portal Layanan Publik Nasional</p>
         <div className="flex space-x-6 mt-4 md:mt-0">
           <a href="#" className="hover:text-white transition-colors flex items-center"><ShieldCheck className="w-3 h-3 mr-1"/> Kebijakan Privasi</a>
           <a href="#" className="hover:text-white transition-colors flex items-center"><FileText className="w-3 h-3 mr-1"/> Syarat & Ketentuan</a>
